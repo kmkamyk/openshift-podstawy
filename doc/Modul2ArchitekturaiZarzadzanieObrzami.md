@@ -1,6 +1,6 @@
-# **Moduł 4 :Zaawansowane Zarządzanie Obrazami i Wzorcami Budowania Aplikacji w OpenShift Container Platform**
+# **Moduł 2 :Zaawansowane Zarządzanie Obrazami i Wzorcami Budowania Aplikacji w OpenShift Container Platform**
 
-## **Moduł 4: Architektura i Zarządzanie Zintegrowanym Rejestrem Obrazów OCP**
+## **Lekcja 2.1: Architektura i Zarządzanie Zintegrowanym Rejestrem Obrazów OCP**
 
 \`\#\# Lekcja 2.1: Zintegrowany Rejestr Obrazów (Internal Registry)
 
