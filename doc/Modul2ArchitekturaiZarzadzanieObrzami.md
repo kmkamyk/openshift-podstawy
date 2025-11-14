@@ -1,8 +1,6 @@
 # **Moduł 2: Zaawansowane Zarządzanie Obrazami i Wzorcami Budowania Aplikacji w OpenShift Container Platform**
 
-## **Lekcja 2.1: Architektura i Zarządzanie Zintegrowanym Rejestrem Obrazów OCP**
-
-\`\#\# Lekcja 2.1: Zintegrowany Rejestr Obrazów (Internal Registry)
+## Lekcja 2.1: Zintegrowany Rejestr Obrazów (Internal Registry)
 
 ### 1.1. Wewnętrzny Mechanizm Rejestru: Analiza Usługi `image-registry.openshift-image-registry.svc:5000`
 
