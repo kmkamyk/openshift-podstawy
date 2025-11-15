@@ -1,8 +1,10 @@
 # Moduł 0: Przygotowanie Laboratorium
 
+---
+
 ## Lekcja 0.1: Wprowadzenie do OpenShift Local (dawniej CodeReady Containers)
 
-### Czym jest OpenShift Local (OCP Local)?
+### 0.1.1. Czym jest OpenShift Local (OCP Local)?
 
 Red Hat OpenShift Local, znany wcześniej jako CodeReady Containers (CRC), to samowystarczalna aplikacja zaprojektowana do uruchamiania minimalistycznego, wstępnie skonfigurowanego klastra OpenShift na lokalnej stacji roboczej.[1, 2] Jego głównym celem jest zapewnienie deweloperom i testerom środowiska, które emuluje produkcyjne środowisko chmurowe OpenShift, pozwalając na szybkie rozpoczęcie pracy z budowaniem i testowaniem klastrów OpenShift.[1, 2]
 
@@ -14,7 +16,7 @@ OpenShift Local dostarczany jest z lokalną wersją platformy OpenShift Containe
 
 Istnieją również kluczowe ograniczenia operacyjne. Klaster OpenShift Local jest **efemeryczny** i **nie wspiera automatycznych aktualizacji** ani uaktualnień w miejscu (in-place upgrades).[9] Aby zaktualizować klaster do nowszej wersji, użytkownik musi zniszczyć (usunąć) istniejącą instancję i utworzyć ją na nowo.[10] Ponadto, klaster ma **stałą, niezmienną nazwę** (`crc.local`).[10] Domyślnie, sieć klastra jest również ograniczona tylko do hosta (host-only), co oznacza, że klaster **nie komunikuje się z niczym poza maszyną**, na której jest uruchomiony, chociaż istnieją obejścia tego ograniczenia.[10]
 
-### Dla kogo jest przeznaczone? (Deweloperzy, nauka)
+### 0.1.2. Dla kogo jest przeznaczone? (Deweloperzy, nauka)
 
 Docelową grupą odbiorców OpenShift Local są przede wszystkim **deweloperzy i testerzy**.[1, 6] Narzędzie to zapewnia "minimalistyczne środowisko" [1] które jest idealnie dopasowane do ich cyklu pracy. Umożliwia deweloperom lokalne pisanie, budowanie i testowanie aplikacji w sposób, który wiernie naśladuje ich działanie na produkcyjnym klastrze OpenShift.[6] Dzięki temu mogą oni "tworzyć mikrousługi, przekształcać je w obrazy i uruchamiać w kontenerach hostowanych przez Kubernetes" bezpośrednio na swoich laptopach lub komputerach stacjonarnych.[6, 11, 12]
 
@@ -29,7 +31,7 @@ W kontekście nauki i rozwoju, nowi użytkownicy często stają przed wyborem: O
 
 Obecny moduł szkoleniowy koncentruje się na OpenShift Local, ponieważ zapewnia on pełną kontrolę nad środowiskiem, nie jest ograniczony czasowo i pozwala na instalację niestandardowych operatorów, co jest kluczowe dla zaawansowanych scenariuszy laboratoryjnych.
 
-### Jakie są wymagania systemowe? (Kluczowe: RAM, CPU, miejsce na dysku)
+### 0.1.3. Jakie są wymagania systemowe? (Kluczowe: RAM, CPU, miejsce na dysku)
 
 Przed instalacją kluczowe jest zweryfikowanie, czy lokalna maszyna spełnia minimalne wymagania systemowe.
 
@@ -60,8 +62,6 @@ OpenShift Local pozwala na dostosowanie alokacji zasobów za pomocą polecenia `
 
 Poniższa tabela podsumowuje wymagania, rozróżniając między absolutnym minimum a zaleceniami dla celów szkoleniowych.
 
------
-
 **Tabela 1: Wymagania Systemowe OpenShift Local (OpenShift Local System Requirements)**
 
 | Komponent (Component) | Wymagane Minimum (Minimum Requirement) | Rekomendowane (Recommended for Lab Work) | Źródła (Sources) |
@@ -71,9 +71,7 @@ Poniższa tabela podsumowuje wymagania, rozróżniając między absolutnym minim
 | **Dysk (Disk)** | 35 GB wolnego miejsca (free space) | 50+ GB wolnego miejsca | [1, 10] |
 | **System (OS)** | Windows 10 (1709+), macOS 11+, RHEL/Fedora/CentOS 8+ | Najnowsza stabilna wersja OS | [1] |
 
------
-
-### Różnica między OCP (Enterprise) a OKD (Community)
+### 0.1.4. Różnica między OCP (Enterprise) a OKD (Community)
 
 Aby w pełni zrozumieć pozycjonowanie OpenShift Local, konieczne jest rozróżnienie dwóch głównych dystrybucji OpenShift.
 
@@ -94,8 +92,6 @@ Jak OpenShift Local wpisuje się w ten podział? Narzędzie `crc` (OpenShift Loc
 
 Jednakże, standardowa, oficjalna dystrybucja OpenShift Local pobierana z portalu Red Hat Developer dostarcza lokalną instancję **OCP (Enterprise)**.[6] Kluczowym dowodem na to jest wymóg posiadania `pull-secret`, który zostanie omówiony w następnej lekcji. `Pull-secret` to klucz uwierzytelniający (entitlement key) powiązany z kontem Red Hat, który autoryzuje pobieranie obrazów z *płatnych, korporacyjnych* rejestrów OCP. Przepływy pracy deweloperskiej w obu wersjach są niemal identyczne, ale dla celów tego laboratorium, uczestnicy będą pracować na lokalnej, jednowęzłowej wersji OCP.
 
------
-
 **Tabela 2: Porównanie: OCP (Enterprise) vs. OKD (Community)**
 
 | Cecha (Feature) | OCP (OpenShift Container Platform) | OKD (Origin Kubernetes Distribution) | Źródła (Sources) |
@@ -107,11 +103,11 @@ Jednakże, standardowa, oficjalna dystrybucja OpenShift Local pobierana z portal
 | **Nowe Funkcje (Features)** | Stabilne, sprawdzone (Stable, Hardened) | "Upstream", nowe funkcje pojawiają się pierwsze | [16] |
 | **Certyfikacja (Certification)** | Certyfikowani operatorzy, bazy danych, middleware | Brak formalnej certyfikacji | [16] |
 
------
+---
 
 ## Lekcja 0.2: Instalacja i konfiguracja OpenShift Local na Twojej lokalnej maszynie
 
-### Pobieranie `oc-local` z Red Hat Developer Portal
+### 0.2.1. Pobieranie `oc-local` z Red Hat Developer Portal
 
 Jak ustalono w Lekcji 0.1, narzędziem wymaganym do instalacji klastra nie jest `oc-local`, lecz plik binarny **`crc`**. Ten plik binarny jest samowystarczalnym programem wykonywalnym, który zarządza całym cyklem życia klastra OpenShift Local.[9] Narzędzie `crc` można pobrać bezpośrednio z portalu Red Hat Developer Portal.
 
@@ -127,7 +123,7 @@ Jak ustalono w Lekcji 0.1, narzędziem wymaganym do instalacji klastra nie jest 
 8.  Rozpakuj pobrane archiwum. Wewnątrz znajdziesz plik wykonywalny `crc` (lub `crc.exe` na Windows).
 9.  Przenieś ten plik binarny `crc` do katalogu, który znajduje się w systemowej zmiennej `PATH` (np. `/usr/local/bin` na Linux/macOS, lub dedykowany folder dodany do `PATH` na Windows). Umożliwi to uruchamianie komendy `crc` z dowolnego miejsca w terminalu.[24, 25]
 
-### Czym jest `pull-secret` i jak go zdobyć?
+### 0.2.2. Czym jest `pull-secret` i jak go zdobyć?
 
 Instalacja OpenShift Local (w wersji OCP) wymaga dwóch komponentów: pliku binarnego `crc` oraz klucza `pull-secret`.
 
@@ -151,7 +147,7 @@ Rejestry te, takie jak `Quay.io` oraz `registry.redhat.io`, hostują oficjalne, 
 
 Zaleca się skopiowanie klucza do schowka, ponieważ będzie on potrzebny podczas procesu `crc start`.
 
-### Inicjalizacja środowiska: `oc-local setup`
+### 0.2.3. Inicjalizacja środowiska: `oc-local setup`
 
 Zanim będzie można uruchomić klaster, należy przygotować maszynę hosta. Służy do tego polecenie `crc setup` (nie `oc-local setup`).
 
@@ -161,7 +157,7 @@ Polecenie `crc setup` [23] nie uruchamia klastra. Jego zadaniem jest skonfigurow
 **Co `crc setup` robi "pod maską":**
 
   * Weryfikuje, czy system spełnia minimalne wymagania (CPU, RAM, dysk).
-  * Tworzy katalog `~/.crc` (lub `C:\Users\<user>\.crc` na Windows), jeśli jeszcze nie istnieje. Będzie on używany do przechowywania plików konfiguracyjnych, pobranego obrazu VM i innych zasobów.[23]
+  * Tworzy katalog `~/.crc` (lub `C:\Users\<user>\.crc` na Windows), jeśli jeszcze nie istnieje. Będzie on używany do przechowywania plików konfiguracyjacych, pobranego obrazu VM i innych zasobów.[23]
   * Na **Linux**: Konfiguruje `libvirt` i `NetworkManager` pod kątem sieci wirtualnej klastra. Ten krok będzie wymagał podania hasła `sudo`.[9, 23]
   * Na **Windows/macOS**: Konfiguruje domyślny hiperwizor systemowy (Hyper-V na Windows Pro, lub HyperKit/Virtualization Framework na macOS). Ten krok może wymagać uprawnień administratora.[23]
   * **Pobiera obraz maszyny wirtualnej**: Jest to najdłuższy etap. `crc` pobierze ważący wiele gigabajtów obraz dysku VM zawierający RHEL CoreOS i wstępnie załadowane obrazy OpenShift. Czas trwania "może być długi, w zależności od szybkości sieci i dysku".[9]
@@ -174,7 +170,7 @@ Polecenie `crc setup` [23] nie uruchamia klastra. Jego zadaniem jest skonfigurow
 3.  Zostaniesz poproszony o podanie hasła administratora/`sudo` w celu skonfigurowania sieci lub hiperwizora.[9, 23]
 4.  Poczekaj na zakończenie procesu, który może potrwać kilkanaście minut, w zależności od szybkości pobierania.
 
-### Uruchomienie klastra: `oc-local start`
+### 0.2.4. Uruchomienie klastra: `oc-local start`
 
 Po pomyślnym przygotowaniu środowiska przez `crc setup`, można uruchomić klaster za pomocą polecenia `crc start`.
 
@@ -211,7 +207,7 @@ Run 'crc console' to access the OpenShift web console.
 
 *(Uwaga: Dokładne hasła dla `kubeadmin` i `developer` zostaną wygenerowane i wyświetlone w tym miejscu).*
 
-### Gdzie są przechowywane kluczowe informacje (kubeconfig, hasła)
+### 0.2.5. Gdzie są przechowywane kluczowe informacje (kubeconfig, hasła)
 
 Po uruchomieniu klastra, kluczowe dane dostępowe są przechowywane w określonych lokalizacjach lub dostępne za pomocą poleceń `crc`.
 
@@ -239,9 +235,11 @@ Nie ma potrzeby ręcznego wyszukiwania pliku `kubeconfig` ani kopiowania haseł 
     `oc config view` [34, 35, 36]
     Po uruchomieniu `eval $(crc oc-env)`, to polecenie pokaże, że `oc` jest teraz skonfigurowane do wskazywania klastra `crc`.
 
+---
+
 ## Lekcja 0.3: Pierwsze logowanie – `oc login` vs Konsola Webowa. Weryfikacja stanu klastra.
 
-### Jak znaleźć adres URL konsoli i hasło `kubeadmin`
+### 0.3.1. Jak znaleźć adres URL konsoli i hasło `kubeadmin`
 
 Po pomyślnym uruchomieniu klastra za pomocą `crc start`, istnieją trzy proste metody uzyskania dostępu do danych logowania.
 
@@ -258,7 +256,7 @@ Po pomyślnym uruchomieniu klastra za pomocą `crc start`, istnieją trzy proste
     `crc console --credentials` [23]
     Jest to najbardziej niezawodna metoda pobierania poświadczeń w dowolnym momencie.
 
-### Logowanie przez `oc login -u kubeadmin...`
+### 0.3.2. Logowanie przez `oc login -u kubeadmin...`
 
 Zanim będzie można użyć klienta wiersza poleceń `oc` do zalogowania się, terminal musi "wiedzieć", gdzie znajduje się plik binarny `oc` i jakiego klastra ma używać.
 
@@ -284,7 +282,7 @@ Można to natychmiast zweryfikować, uruchamiając:
 `oc whoami`
 Wynik powinien brzmieć: `kubeadmin`.[23]
 
-### Logowanie jako domyślny użytkownik `developer`
+### 0.3.3. Logowanie jako domyślny użytkownik `developer`
 
 OpenShift Local udostępnia dwóch użytkowników, aby odzwierciedlić fundamentalną zasadę bezpieczeństwa OpenShift: separację ról.
 
@@ -309,7 +307,7 @@ Do pracy laboratoryjnej i codziennego rozwoju, zalecane jest używanie konta `de
 4.  Po pomyślnym logowaniu, zweryfikuj sesję, uruchamiając `oc whoami`.
 5.  Terminal zwróci teraz: `developer`. Od tego momentu wszystkie operacje `oc` będą wykonywane z uprawnieniami dewelopera.
 
-### Pierwsze spojrzenie na konsolę: Perspektywa Administratora vs Dewelopera
+### 0.3.4. Pierwsze spojrzenie na konsolę: Perspektywa Administratora vs Dewelopera
 
 Konsola webowa OpenShift jest centralnym punktem zarządzania i interakcji z klastrem. Jej najbardziej charakterystyczną cechą jest przełącznik perspektyw (Perspective Switcher), zwykle znajdujący się w lewym górnym rogu interfejsu, który pozwala przełączać się między widokami "Administrator" i "Developer".[38, 39, 40, 41]
 
@@ -336,7 +334,7 @@ Badania użytkowników przeprowadzone przez Red Hat wykazały, że model dwóch 
 
 W odpowiedzi na te obserwacje, Red Hat wprowadza **"zunifikowane doświadczenie konsoli" (unified console experience)**. Ta nowa perspektywa łączy najważniejsze funkcje z obu widoków, wspierając lepiej hybrydowe role, takie jak "inżynier platformy" (platform engineer). Chociaż w ramach tego laboratorium studenci będą uczyć się klasycznego podziału, ważne jest, aby wiedzieć o tej ewolucji i przyczynach, które do niej doprowadziły.
 
-### Podstawowe komendy weryfikacyjne: `oc whoami`, `oc status`, `oc get clusteroperators`
+### 0.3.5. Podstawowe komendy weryfikacyjne: `oc whoami`, `oc status`, `oc get clusteroperators`
 
 Po zalogowaniu się przez CLI, istnieje zestaw podstawowych poleceń służących do weryfikacji tożsamości i stanu środowiska.
 
@@ -352,7 +350,7 @@ Po zalogowaniu się przez CLI, istnieje zestaw podstawowych poleceń służącyc
   * **Zakres:** **Zakres projektowy (Project-Scoped)**. Jest to polecenie przeznaczone głównie dla deweloperów, aby mogli szybko ocenić stan swoich aplikacji.
   * **Analiza wyjścia [36]:**
     ```
-    In project default on server https://api.crc.testing:6443
+    In project default on server [https://api.crc.testing:6443](https://api.crc.testing:6443)
     svc/app001 - 10.17.52.114:27017
     deployment/app001 deploys...
         deployment #5 running for 6 months - 1 pod
@@ -371,8 +369,6 @@ Po zalogowaniu się przez CLI, istnieje zestaw podstawowych poleceń służącyc
 
 Podsumowanie tych trzech poleceń doskonale ilustruje różnice w zakresach odpowiedzialności w OpenShift.
 
------
-
 **Tabela 3: Podstawowe Komendy Weryfikacyjne (Basic Verification Commands)**
 
 | Komenda (Command) | Zasięg (Scope) | Główny Użytkownik (Primary User) | Cel (Purpose) | Źródła (Sources) |
@@ -381,8 +377,60 @@ Podsumowanie tych trzech poleceń doskonale ilustruje różnice w zakresach odpo
 | **`oc status`** | Projekt (Project-Scoped) | Deweloper (Developer) | Pokazuje status aplikacji i serwisów *wewnątrz* projektu. (Shows status of apps/services *inside* a project.) | [50, 36] |
 | **`oc get co`** | Klaster (Cluster-Scoped) | Administrator (Admin) | Pokazuje stan "zdrowia" podstawowych komponentów *całego* klastra. (Shows health of the *entire* cluster's core components.) | [53] |
 
------
+---
 
-#### **Cytowane prace**
+## Cytowane prace
 
-1\. Red Hat OpenShift Local, https://openshift.guide/getting-started/openshift-local.html 2\. OpenShift Local Development \- Comparing Your Options \- Infralovers, https://www.infralovers.com/blog/2025-10-14-openshift-local-development-environments/ 3\. Compare OKD vs CodeReady Containers vs OpenShift Local \- DevOpsSchool.com, https://www.devopsschool.com/blog/openshift-compare-okd-vs-codeready-containers-vs-openshift-local/ 4\. What's new in OpenShift Local 2.0 \- Red Hat Developer, https://developers.redhat.com/articles/2022/05/10/whats-new-openshift-local-20 5\. Download and install the Red Hat OpenShift CLI, https://developers.redhat.com/learn/openshift/download-and-install-red-hat-openshift-cli 6\. Developer sandbox Vs Openshift local : r/redhat \- Reddit, https://www.reddit.com/r/redhat/comments/16g56f4/developer\_sandbox\_vs\_openshift\_local/ 7\. System requirements \- IBM, https://www.ibm.com/docs/en/spectrum-discover/2.0.5?topic=planning-system-requirements 8\. OpenShift Requirements \- Documentation, https://docs.rackn.io/v4.14.30/arch/provisioning/application/openshift/requirements/ 9\. How to install Red Hat OpenShift Local on your laptop, https://www.redhat.com/en/blog/install-openshift-local 10\. OpenShift Local or Single Node OpenShift – Open Sourcerers, https://www.opensourcerers.org/2022/09/13/openshift-local-or-single-node-openshift/ 11\. Red Hat Documentation, https://docs.redhat.com/ 12\. Chapter 2\. OpenShift Container Platform overview | Getting started \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.12/html/getting\_started/openshift-overview 13\. Download Red Hat Openshift, https://developers.redhat.com/products/openshift/download 14\. Getting Started with OpenShift Local | by Sanjit Chakraborty | Medium, https://sanjitcibm.medium.com/getting-started-with-openshift-local-f59c07cbfd4c 15\. Running Red Hat OpenShift on a Tiny Form Factor: My Hardware Picks and Setup Guide, https://nleiva.medium.com/running-red-hat-openshift-on-a-tiny-form-factor-my-hardware-picks-and-setup-guide-e540323da810 16\. Red Hat OpenShift vs. OKD, https://www.redhat.com/en/topics/containers/red-hat-openshift-okd 17\. OKD vs OCP \- Red Hat Learning Community, https://learn.redhat.com/t5/Kube-by-Example-KBE/OKD-vs-OCP/td-p/23997 18\. OKD vs OpenShift \- Reddit, https://www.reddit.com/r/openshift/comments/dyrnlj/okd\_vs\_openshift/ 19\. Compliance in the Cloud: Compliant Kubernetes vs OpenShift \- elastisys, https://elastisys.com/compliant-kubernetes-vs-openshift/ 20\. Differences between Red Hat Openshift Container Platform (OCP) and OKD \- Reddit, https://www.reddit.com/r/openshift/comments/qbw0ai/differences\_between\_red\_hat\_openshift\_container/ 21\. Self-managed Red Hat OpenShift subscription guide, https://www.redhat.com/en/resources/self-managed-openshift-subscription-guide 22\. Getting started with Red Hat OpenShift Local | Red Hat Developer, https://developers.redhat.com/products/openshift-local/getting-started 23\. Red Hat Developer, https://developers.redhat.com/ 24\. Chapter 1\. OpenShift Container Platform installation overview \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.10/html/installing/ocp-installation-overview 25\. Getting started with the OpenShift CLI \- OKD Documentation, https://docs.okd.io/4.18/cli\_reference/openshift\_cli/getting-started-cli.html 26\. Chapter 1\. OpenShift CLI (oc) | CLI tools \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.2/html/cli\_tools/openshift-cli-oc 27\. Add or update your Red Hat pull secret on an Azure Red Hat OpenShift 4 cluster, https://learn.microsoft.com/en-us/azure/openshift/howto-add-update-pull-secret 28\. Chapter 5\. Managing images | Images | OpenShift Container Platform | 4.8 | Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.8/html/images/managing-images 29\. Chapter 5\. Managing images | Images | OpenShift Container ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.13/html/images/managing-images 30\. Using image pull secrets \- Managing images | Images | OKD 4.18 \- OKD Documentation, https://docs.okd.io/4.18/openshift\_images/managing\_images/using-image-pull-secrets.html 31\. Optional: Obtain a Red Hat pull secret \- IBM, https://www.ibm.com/docs/en/guardium-insights/3.2.x?topic=aro-optional-obtain-red-hat-pull-secret 32\. Chapter 4\. Managing your clusters | Managing clusters | OpenShift ..., https://docs.redhat.com/en/documentation/openshift\_cluster\_manager/1-latest/html/managing\_clusters/assembly-managing-clusters 33\. Chapter 2\. Accessing the web console | Web console | OpenShift ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.13/html/web\_console/web-console 34\. Chapter 2\. OpenShift CLI (oc) \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.9/html/cli\_tools/openshift-cli-oc 35\. OpenShift CLI developer command reference \- OpenShift CLI (oc ..., https://docs.okd.io/latest/cli\_reference/openshift\_cli/developer-cli-commands.html 36\. CLI Reference | OpenShift Container Platform | 3.5 \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/3.5/html-single/cli\_reference/index 37\. Accessing Red Hat OpenShift clusters \- IBM Cloud Docs, https://cloud.ibm.com/docs/openshift?topic=openshift-access\_cluster 38\. What is the difference between application console vs cluster console? \- Stack Overflow, https://stackoverflow.com/questions/65487799/what-is-the-difference-between-application-console-vs-cluster-console 39\. Chapter 5\. About the Developer perspective in the web console ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.4/html/web\_console/odc-about-developer-perspective 40\. Chapter 5\. About the Developer perspective in the web console | Web console | OpenShift Container Platform | 4.2 | Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.2/html/web\_console/odc-about-developer-perspective 41\. Chapter 3\. Creating and building an application using the web console | Getting started | OpenShift Container Platform \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.11/html/getting\_started/openshift-web-console 42\. OpenShift 101 \- IBM Developer, https://developer.ibm.com/articles/openshift-101/ 43\. Chapter 1\. Web Console Overview | Web console | Red Hat ..., https://docs.redhat.com/en/documentation/red\_hat\_openshift\_service\_on\_aws\_classic\_architecture/4/html/web\_console/web-console-overview 44\. Chapter 1\. Web Console Overview | Web console | OpenShift Container Platform | 4.8, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.8/html/web\_console/web-console-overview 45\. Tour of the Developer Perspective in the Red Hat OpenShift 4.2 web console, https://developers.redhat.com/blog/2019/10/16/openshift-developer-perspective 46\. Creating applications using the Developer perspective \- OKD Documentation, https://docs.okd.io/latest/applications/creating\_applications/odc-creating-applications-using-developer-perspective.html 47\. OpenShift 4.19 brings a unified console for developers and admins ..., https://developers.redhat.com/articles/2025/06/26/openshift-419-brings-unified-console-developers-and-admins 48\. The oc Command for Newbies \- Red Hat, https://www.redhat.com/en/blog/oc-command-newbies 49\. Chapter 1\. OpenShift CLI (oc) | CLI tools | OpenShift Container ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.5/html/cli\_tools/openshift-cli-oc 50\. OpenShift \- Deployment status using the oc status ... \- Bootstrap, https://www.freekb.net/Article?id=2694 51\. ClusterOperator \[config.openshift.io/v1\] \- Config APIs | API reference | OKD 4.17, https://docs.okd.io/4.17/rest\_api/config\_apis/clusteroperator-config-openshift-io-v1.html 52\. OpenShift ClusterOperatorDegraded \- Doctor Droid, https://drdroid.io/stack-diagnosis/openshift-clusteroperatordegraded 53\. Check OpenShift / OKD Cluster Version and Operators Status ..., https://computingforgeeks.com/check-openshift-okd-cluster-version-and-operators-status/
+1\. Red Hat OpenShift Local, https://openshift.guide/getting-started/openshift-local.html
+2\. OpenShift Local Development \- Comparing Your Options \- Infralovers, https://www.infralovers.com/blog/2025-10-14-openshift-local-development-environments/
+3\. Compare OKD vs CodeReady Containers vs OpenShift Local \- DevOpsSchool.com, https://www.devopsschool.com/blog/openshift-compare-okd-vs-codeready-containers-vs-openshift-local/
+4\. What's new in OpenShift Local 2.0 \- Red Hat Developer, https://developers.redhat.com/articles/2022/05/10/whats-new-openshift-local-20
+5\. Download and install the Red Hat OpenShift CLI, https://developers.redhat.com/learn/openshift/download-and-install-red-hat-openshift-cli
+6\. Developer sandbox Vs Openshift local : r/redhat \- Reddit, https://www.reddit.com/r/redhat/comments/16g56f4/developer\_sandbox\_vs\_openshift\_local/
+7\. System requirements \- IBM, https://www.ibm.com/docs/en/spectrum-discover/2.0.5?topic=planning-system-requirements
+8\. OpenShift Requirements \- Documentation, https://docs.rackn.io/v4.14.30/arch/provisioning/application/openshift/requirements/
+9. How to install Red Hat OpenShift Local on your laptop, https://www.redhat.com/en/blog/install-openshift-local
+10\. OpenShift Local or Single Node OpenShift – Open Sourcerers, https://www.opensourcerers.org/2022/09/13/openshift-local-or-single-node-openshift/
+11\. Red Hat Documentation, https://docs.redhat.com/
+12\. Chapter 2\. OpenShift Container Platform overview | Getting started \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.12/html/getting\_started/openshift-overview
+13\. Download Red Hat Openshift, https://developers.redhat.com/products/openshift/download
+14\. Getting Started with OpenShift Local | by Sanjit Chakraborty | Medium, https://sanjitcibm.medium.com/getting-started-with-openshift-local-f59c07cbfd4c
+15\. Running Red Hat OpenShift on a Tiny Form Factor: My Hardware Picks and Setup Guide, https://nleiva.medium.com/running-red-hat-openshift-on-a-tiny-form-factor-my-hardware-picks-and-setup-guide-e540323da810
+16\. Red Hat OpenShift vs. OKD, https://www.redhat.com/en/topics/containers/red-hat-openshift-okd
+17\. OKD vs OCP \- Red Hat Learning Community, https://learn.redhat.com/t5/Kube-by-Example-KBE/OKD-vs-OCP/td-p/23997
+18\. OKD vs OpenShift \- Reddit, https://www.reddit.com/r/openshift/comments/dyrnlj/okd\_vs\_openshift/
+19\. Compliance in the Cloud: Compliant Kubernetes vs OpenShift \- elastisys, https://elastisys.com/compliant-kubernetes-vs-openshift/
+20\. Differences between Red Hat Openshift Container Platform (OCP) and OKD \- Reddit, https://www.reddit.com/r/openshift/comments/qbw0ai/differences\_between\_red\_hat\_openshift\_container/
+21\. Self-managed Red Hat OpenShift subscription guide, https://www.redhat.com/en/resources/self-managed-openshift-subscription-guide
+22\. Getting started with Red Hat OpenShift Local | Red Hat Developer, https://developers.redhat.com/products/openshift-local/getting-started
+23\. Red Hat Developer, https://developers.redhat.com/
+24\. Chapter 1\. OpenShift Container Platform installation overview \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.10/html/installing/ocp-installation-overview
+25\. Getting started with the OpenShift CLI \- OKD Documentation, https://docs.okd.io/4.18/cli\_reference/openshift\_cli/getting-started-cli.html
+26\. Chapter 1\. OpenShift CLI (oc) | CLI tools \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.2/html/cli\_tools/openshift-cli-oc
+27\. Add or update your Red Hat pull secret on an Azure Red Hat OpenShift 4 cluster, https://learn.microsoft.com/en-us/azure/openshift/howto-add-update-pull-secret
+28\. Chapter 5\. Managing images | Images | OpenShift Container Platform | 4.8 | Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.8/html/images/managing-images
+29\. Chapter 5\. Managing images | Images | OpenShift Container ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.13/html/images/managing-images
+30\. Using image pull secrets \- Managing images | Images | OKD 4.18 \- OKD Documentation, https://docs.okd.io/4.18/openshift\_images/managing\_images/using-image-pull-secrets.html
+31\. Optional: Obtain a Red Hat pull secret \- IBM, https://www.ibm.com/docs/en/guardium-insights/3.2.x?topic=aro-optional-obtain-red-hat-pull-secret
+32\. Chapter 4\. Managing your clusters | Managing clusters | OpenShift ..., https://docs.redhat.com/en/documentation/openshift\_cluster\_manager/1-latest/html/managing\_clusters/assembly-managing-clusters
+33\. Chapter 2\. Accessing the web console | Web console | OpenShift ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.13/html/web\_console/web-console
+34\. Chapter 2\. OpenShift CLI (oc) \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.9/html/cli\_tools/openshift-cli-oc
+35\. OpenShift CLI developer command reference \- OpenShift CLI (oc ..., https://docs.okd.io/latest/cli\_reference/openshift\_cli/developer-cli-commands.html
+36\. CLI Reference | OpenShift Container Platform | 3.5 \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/3.5/html-single/cli\_reference/index
+37\. Accessing Red Hat OpenShift clusters \- IBM Cloud Docs, https://cloud.ibm.com/docs/openshift?topic=openshift-access\_cluster
+38\. What is the difference between application console vs cluster console? \- Stack Overflow, https://stackoverflow.com/questions/65487799/what-is-the-difference-between-application-console-vs-cluster-console
+39\. Chapter 5\. About the Developer perspective in the web console ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.4/html/web\_console/odc-about-developer-perspective
+40\. Chapter 5\. About the Developer perspective in the web console | Web console | OpenShift Container Platform | 4.2 | Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.2/html/web\_console/odc-about-developer-perspective
+41\. Chapter 3\. Creating and building an application using the web console | Getting started | OpenShift Container Platform \- Red Hat Documentation, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.11/html/getting\_started/openshift-web-console
+42\. OpenShift 101 \- IBM Developer, https://developer.ibm.com/articles/openshift-101/
+43\. Chapter 1\. Web Console Overview | Web console | Red Hat ..., https://docs.redhat.com/en/documentation/red\_hat\_openshift\_service\_on\_aws\_classic\_architecture/4/html/web\_console/web-console-overview
+44\. Chapter 1\. Web Console Overview | Web console | OpenShift Container Platform | 4.8, https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.8/html/web\_console/web-console-overview
+45\. Tour of the Developer Perspective in the Red Hat OpenShift 4.2 web console, https://developers.redhat.com/blog/2019/10/16/openshift-developer-perspective
+46\. Creating applications using the Developer perspective \- OKD Documentation, https://docs.okd.io/latest/applications/creating\_applications/odc-creating-applications-using-developer-perspective.html
+47\. OpenShift 4.19 brings a unified console for developers and admins ..., https://developers.redhat.com/articles/2025/06/26/openshift-419-brings-unified-console-developers-and-admins
+48\. The oc Command for Newbies \- Red Hat, https://www.redhat.com/en/blog/oc-command-newbies
+49\. Chapter 1\. OpenShift CLI (oc) | CLI tools | OpenShift Container ..., https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.5/html/cli\_tools/openshift-cli-oc
+50\. OpenShift \- Deployment status using the oc status ... \- Bootstrap, https://www.freekb.net/Article?id=2694
+51\. ClusterOperator \[config.openshift.io/v1\] \- Config APIs | API reference | OKD 4.17, https://docs.okd.io/4.17/rest\_api/config\_apis/clusteroperator-config-openshift-io-v1.html
+52\. OpenShift ClusterOperatorDegraded \- Doctor Droid, https://drdroid.io/stack-diagnosis/openshift-clusteroperatordegraded
+53\. Check OpenShift / OKD Cluster Version and Operators Status ..., https://computingforgeeks.com/check-openshift-okd-cluster-version-and-operators-status/
