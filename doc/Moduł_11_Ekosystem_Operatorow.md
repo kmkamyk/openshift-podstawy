@@ -2,7 +2,7 @@
 
 ## Lekcja 11.1: Koncepcja Operatora (Operator Pattern) i CRD
 
-### 11.1.1. Wprowadzenie: Ewolucja od Zarządzania Manualnego do Automatyzacji Stanowej
+### Wprowadzenie: Ewolucja od Zarządzania Manualnego do Automatyzacji Stanowej
 
 Wczesna automatyzacja w Kubernetes, napędzana przez wbudowane kontrolery, takie jak $Deployment$ czy $ReplicaSet$, koncentrowała się przede wszystkim na zarządzaniu aplikacjami bezstanowymi. Te mechanizmy doskonale radzą sobie z zapewnieniem, że określona liczba replik bezstanowej aplikacji jest uruchomiona i dostępna. Jednakże, ekosystemy IT są w dużej mierze zależne od aplikacji stanowych – takich jak bazy danych, systemy kolejkowania wiadomości czy klastry $etcd$ – które posiadają skomplikowaną, wewnętrzną logikę operacyjną.
 
@@ -10,7 +10,7 @@ Problem polega na tym, że generyczne kontrolery Kubernetes nie posiadają wiedz
 
 Wzorzec Operatora (Operator Pattern) został wprowadzony właśnie po to, aby rozwiązać ten problem. Motywacją było zautomatyzowanie i zakodowanie wiedzy oraz powtarzalnych zadań, które normalnie wykonuje wykwalifikowany "operator ludzki" (Human Operator).[2, 3] Operator przechwytuje tę głęboką wiedzę na temat działania systemu i przekłada ją na kod.[3] Pozwala to na rozszerzenie możliwości klastra Kubernetes i automatyzację zadań wykraczających poza standardowe funkcje, bez konieczności modyfikowania samego, bazowego kodu Kubernetes.[3, 4]
 
-### 11.1.2. Filar 1: Custom Resource Definition (CRD) – Rozszerzanie API Kubernetes
+### Filar 1: Custom Resource Definition (CRD) – Rozszerzanie API Kubernetes
 
 Pierwszym fundamentalnym filarem wzorca Operatora jest $Custom Resource Definition$ (CRD). CRD to natywny mechanizm Kubernetes służący do rozszerzania jego API.[1, 5] W praktyce, CRD pozwala na zdefiniowanie zupełnie nowego *rodzaju* (Kind) zasobu, który serwer API Kubernetes będzie przechowywał, udostępniał i zarządzał nim tak samo, jak wbudowanymi zasobami, takimi jak $Pods$, $Services$ czy $Deployments$.[5, 6]
 
@@ -25,7 +25,7 @@ Z perspektywy użytkownika, CRD staje się nowym, wysokopoziomowym interfejsem A
 
 Warto zauważyć, że CRD to nie jedyny sposób rozszerzania API, ale jest najprostszy. Bardziej zaawansowaną alternatywą jest $API Aggregation$, która pozwala na budowę własnego, dedykowanego serwera API, dając pełną kontrolę nad walidacją, sposobem przechowywania danych i konwersją między wersjami API. Jest to jednak znacznie bardziej skomplikowane.[5] Nowoczesne CRD oferują jednak bogate funkcje, takie jak walidacja schematu (OpenAPI v3), obsługa wielu wersji API (kluczowa dla ewolucji i unikania łamania kompatybilności) oraz mechanizmy $finalizers$ do bezpiecznego zarządzania procesem usuwania zasobów.[8, 9]
 
-### 11.1.3. Filar 2: Kontroler (Controller) – Mózg Operacji
+### Filar 2: Kontroler (Controller) – Mózg Operacji
 
 Samo zdefiniowanie CRD i tworzenie obiektów CR nie wnosi żadnej funkcjonalności – są to jedynie rekordy danych przechowywane w $etcd$.[7] Aby te dane "ożyły" i przełożyły się na realne działania w klastrze, potrzebny jest drugi filar: **Kontroler**.
 
@@ -37,7 +37,7 @@ Kontroler jest aktywnym procesem (demonem), zazwyczaj uruchomionym jako $Deploym
 
 Ta nieskończona pętla uzgadniania jest fundamentalną zasadą działania Kubernetes. Kontroler nie reaguje tylko na zdarzenia; stale dąży do tego, by rzeczywistość odpowiadała deklaracji, co zapewnia samonaprawianie się systemu.[10, 12]
 
-### 11.1.4. Synteza: Operator jako Kompletny Wzorzec
+### Synteza: Operator jako Kompletny Wzorzec
 
 Wzorzec Operatora to synergia obu tych filarów: $Operator = Custom Resource Definition (CRD) + Controller$.[6, 14]
 
@@ -57,7 +57,7 @@ Co więcej, CRD staje się formalnym, wersjonowanym kontraktem API dla danej apl
 
 ## Lekcja 11.2: Operator Lifecycle Manager (OLM)
 
-### 11.2.1. Definicja OLM: "System Operacyjny" lub "App Store" dla Operatorów
+### Definicja OLM: "System Operacyjny" lub "App Store" dla Operatorów
 
 Wprowadzenie wzorca Operatora rozwiązało problem zarządzania skomplikowanymi aplikacjami *wewnątrz* Kubernetes. Szybko jednak pojawił się nowy problem: same Operatory są potężnym oprogramowaniem, które również wymaga zarządzania.[15] Kto będzie instalować Operatory, zarządzać ich zależnościami (Operator A może wymagać Operatora B), aktualizować je do nowych wersji i konfigurować dla nich skomplikowane uprawnienia RBAC? Kto zarządza menedżerami?
 
@@ -68,7 +68,7 @@ OLM można postrzegać na dwa sposoby:
 1.  **Analogia do "App Store"** [19]: OLM zapewnia mechanizmy odkrywania (Discovery) Operatorów, automatycznych aktualizacji "over-the-air" oraz model zależności (Dependency model).[16] Działa jak scentralizowany punkt do zarządzania "aplikacjami" (Operatorami) na klastrze.
 2.  **Analogia do Menedżera Pakietów** [15, 20]: OLM działa bardzo podobnie do systemowych menedżerów pakietów, takich jak $yum$ (RPM) czy $apt$ (DPKG). Rozwiązuje zależności i dba o to, aby na klastrze zainstalowany był spójny i kompatybilny zestaw oprogramowania (Operatorów).[16, 21]
 
-### 11.2.2. Architektura OLM: Operator dla Operatorów
+### Architektura OLM: Operator dla Operatorów
 
 Fundamentalną koncepcją OLM jest to, że sam w sobie jest on implementacją wzorca Operatora – jest to "Meta-Operator", czyli Operator stworzony do zarządzania innymi Operatorami. Wykorzystuje ten sam model (CRD + Kontrolery) do automatyzacji cyklu życia Operatorów.
 
@@ -79,7 +79,7 @@ Architektura OLM opiera się na dwóch głównych kontrolerach (Operatorach), kt
 
 Ten wielowarstwowy, rekursywny system jest niezwykle potężny. Użytkownik po prostu deklaruje intencję (poprzez CR $Subscription$), a dwa kontrolery OLM współpracują, aby tę intencję rozwiązać, zaplanować i bezpiecznie wykonać.
 
-### 11.2.3. Kluczowe Zasoby (CRD) Architektury OLM
+### Kluczowe Zasoby (CRD) Architektury OLM
 
 "Magia" OLM jest w pełni oparta na zestawie dedykowanych definicji $Custom Resource Definitions$ (CRD), które OLM sam instaluje i którymi zarządza. Zrozumienie tych zasobów jest kluczowe dla zrozumienia OLM.[18, 24, 26]
 
@@ -93,7 +93,7 @@ Ten wielowarstwowy, rekursywny system jest niezwykle potężny. Użytkownik po p
   * **$InstallPlan$ ($ip$):** Obliczony "plan wykonawczy" generowany przez $Catalog Operator$.[29] Zawiera on dokładną, krok po kroku listę *wszystkich* zasobów (zarówno nowych, jak i aktualizowanych), które muszą zostać utworzone, aby bezpiecznie zainstalować lub zaktualizować Operatora do żądanej wersji CSV.[24, 26] Plany te mogą wymagać ręcznej akceptacji przez administratora lub być zatwierdzane automatycznie, w zależności od konfiguracji $Subscription$.[25]
   * **$OperatorGroup$ ($og$):** Zasób kluczowy dla Lekcji 11.4. Definiuje on zasięg (scope) i uprawnienia dla Operatorów instalowanych w danej przestrzeni nazw.[23, 24, 26]
 
-### 11.2.4. Zarządzanie Zależnościami i Aktualizacjami
+### Zarządzanie Zależnościami i Aktualizacjami
 
 Jedną z najważniejszych funkcji OLM jest zaawansowane zarządzanie zależnościami. Działa to w oparciu o $ClusterServiceVersion$. Kiedy $Catalog Operator$ analizuje CSV dla Operatora A, sprawdza pole $spec.customresourcedefinitions.required$ (lub $spec.apiservicedefinitions.required$).[21]
 
@@ -122,7 +122,7 @@ Poniższa tabela syntetyzuje kluczowe zasoby (CRD) wprowadzone przez OLM, które
 
 ## Lekcja 11.3: OperatorHub – Instalacja i Zarządzanie Oprogramowaniem
 
-### 11.3.1. OperatorHub: Interfejs Użytkownika dla OLM
+### OperatorHub: Interfejs Użytkownika dla OLM
 
 OperatorHub to graficzny interfejs użytkownika (GUI) zintegrowany z konsolą webową OpenShift Container Platform (OCP). Służy on jako "witryna sklepowa" lub "centrum odkrywania" dla wszystkich Operatorów, którymi zarządza OLM.[31, 32, 33, 34]
 
@@ -136,7 +136,7 @@ OperatorHub agreguje wszystkie Operatory (CSV) udostępniane przez różne $Cata
 
 Głównym celem OperatorHub jest umożliwienie administratorom "jednym kliknięciem" zainstalowania i zasubskrybowania Operatora. To z kolei udostępnia nowe możliwości (np. bazy danych, systemy monitoringu) zespołom deweloperskim w modelu "self-service".[22, 31, 32]
 
-### 11.3.2. Studium Przypadku 1: Instalacja Operatora PostgreSQL
+### Studium Przypadku 1: Instalacja Operatora PostgreSQL
 
 Proces instalacji Operatora za pomocą OperatorHub jest ustandaryzowany i intuicyjny:
 
@@ -153,7 +153,7 @@ Proces instalacji Operatora za pomocą OperatorHub jest ustandaryzowany i intuic
 
 W tle, to kliknięcie w UI spowodowało jedynie utworzenie obiektu CR $kind: Subscription$. Całą resztę (rozwiązanie zależności, wygenerowanie $InstallPlan$, instalację $CSV$ i utworzenie zasobów) wykonały automatycznie kontrolery OLM ($Catalog Operator$ i $OLM Operator$).[23, 25]
 
-### 11.3.3. Magia Abstrakcji: Tworzenie Bazy Danych za Pomocą Obiektu K8s
+### Magia Abstrakcji: Tworzenie Bazy Danych za Pomocą Obiektu K8s
 
 Instalacja Operatora to dopiero początek. Prawdziwa wartość ujawnia się teraz, gdy deweloperzy chcą skorzystać z oprogramowania, którym Operator zarządza.
 
@@ -199,7 +199,7 @@ Gdy deweloper wykona polecenie $oc apply -f hippo.yaml$, dzieje się "magia":
 
 Operator *tłumaczy* wysokopoziomową dyrektywę na niskopoziomowe działania.[1] To jest właśnie inwersja modelu zarządzania: użytkownik przestaje zarządzać infrastrukturą (Podami, PVC), a zaczyna zarządzać *usługą* (bazą danych) poprzez jej dedykowane, wysokopoziomowe API (CRD).[7]
 
-### 11.3.4. Studium Przypadku 2: Instalacja i Użycie Operatora Redis
+### Studium Przypadku 2: Instalacja i Użycie Operatora Redis
 
 Ten sam wzorzec dotyczy każdego oprogramowania zarządzanego przez Operatora.
 
@@ -225,7 +225,7 @@ Ten model jest niezwykle potężny, ponieważ umożliwia prawdziwy "self-service
 
 ## Lekcja 11.4: Zarządzanie Aplikacjami w Wielu Namespace'ach (RBAC i Operatory)
 
-### 11.4.1. Definicja Zasięgu: OperatorGroups
+### Definicja Zasięgu: OperatorGroups
 
 Jednym z najważniejszych i najbardziej złożonych aspektów zarządzania Operatorami jest określenie ich *zasięgu* (scope). Pojawia się fundamentalne pytanie: Gdzie Operator (jego kontroler) powinien szukać zasobów CR, którymi ma zarządzać? Czy powinien widzieć tylko CR-y w swojej własnej przestrzeni nazw? W kilku wybranych? Czy we wszystkich przestrzeniach nazw w całym klastrze?
 
@@ -239,7 +239,7 @@ Mechanizm działania $OperatorGroup$ polega na zdefiniowaniu zestawu docelowych 
 
 Aby instalacja się powiodła, konfiguracja $OperatorGroup$ musi być kompatybilna z trybami instalacji ($InstallMode$) wspieranymi przez Operatora (zadeklarowanymi w jego $CSV$).[55, 57, 58] CSV Operatora deklaruje, jakie tryby *wspiera* (np. $AllNamespaces: true$, $SingleNamespace: true$, $OwnNamespace: true$), a $OperatorGroup$ *wybiera* jeden z tych wspieranych trybów dla danej przestrzeni nazw.[53, 59]
 
-### 11.4.2. Analiza Trybów Instalacji: SingleNamespace vs. AllNamespaces
+### Analiza Trybów Instalacji: SingleNamespace vs. AllNamespaces
 
 Wybór trybu instalacji jest fundamentalną decyzją architektoniczną.
 
@@ -264,7 +264,7 @@ Wybór trybu instalacji jest fundamentalną decyzją architektoniczną.
       * **Bezpieczeństwo:** Operator ten musi otrzymać bardzo szerokie, globalne uprawnienia (zazwyczaj $ClusterRole$), co stwarza poważne ryzyko.[61, 62] Błąd w tym Operatorze (lub jego kompromitacja) może zdestabilizować lub naruszyć bezpieczeństwo *całego* klastra.
       * **Wydajność na dużą skalę:** Na bardzo dużych klastrach (tysiące przestrzeni nazw) OLM domyślnie tworzy kopie CSV w każdym namespace, co może prowadzić do problemów z wydajnością $etcd$ i zużyciem pamięci przez OLM, chociaż można to zachowanie wyłączyć.[66]
 
-### 11.4.3. Konfiguracja RBAC: Jak OLM Zarządza Uprawnieniami
+### Konfiguracja RBAC: Jak OLM Zarządza Uprawnieniami
 
 OLM nie tylko instaluje Operatora; aktywnie zarządza również jego uprawnieniami RBAC.[29, 52, 53] Jak wspomniano, uprawnienia są *deklarowane* przez autora Operatora w manifeście $CSV$.[22] OLM odczytuje tę deklarację i *generuje* odpowiednie zasoby RBAC w oparciu o $InstallMode$ i zasięg $OperatorGroup$.
 
