@@ -305,7 +305,7 @@ Poniższa tabela syntetyzuje kluczowe różnice, zalety i wady głównych trybó
 | **Zaleta** | Efektywność zasobów (1 instancja Operatora) | Silna izolacja, bezpieczeństwo (PoLP) [61] | Silna izolacja, bezpieczeństwo (PoLP) [61] |
 | **Wada** | Szerokie, globalne uprawnienia (ryzyko bezpieczeństwa) [62] | Wiele instancji Operatora (zużycie zasobów) | Wiele instancji Operatora (zużycie zasobów) |
 
-## Sekcja 5. Wnioski: Synteza Ekosystemu Operatorów
+## Wnioski: Synteza Ekosystemu Operatorów
 
 Moduł 11 przedstawia kompletną ewolucję w zarządzaniu aplikacjami na platformie Kubernetes, przechodząc od podstawowych koncepcji do zaawansowanych architektur bezpieczeństwa.
 
