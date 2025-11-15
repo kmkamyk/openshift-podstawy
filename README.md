@@ -18,7 +18,7 @@ Całość podzielona jest na moduły, które progresywnie budują wiedzę.
 * **[Moduł 1: Fundamenty](./docs/modul-01-fundamenty.md)**
     * Wyjaśnia kluczowe różnice filozoficzne i techniczne między "czystym" Kubernetesem (K8s) a OpenShift (OCP), m.in. `Project` vs `Namespace`, `oc` vs `kubectl` oraz architektura bazująca na Operatorach.
 
-* **[Moduł 2: Budowanie Aplikacji](./docs/modul-02-budowanie-aplikacji.md)**
+* **[Moduł 2: Zarządzanie Obrazami](./docs/modul-02-zarzadzanie-obrazami.md)**
     * Omawia zintegrowany rejestr, obiekty `ImageStream` oraz strategie budowania, ze szczególnym uwzględnieniem **S2I (Source-to-Image)**.
 
 * **[Moduł 3: Wdrażanie Aplikacji](./docs/modul-03-wdrazanie-aplikacji.md)**
