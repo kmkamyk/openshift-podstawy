@@ -2,11 +2,11 @@
 
 **Cel Modułu:** Opanowanie architektonicznych i praktycznych aspektów zarządzania konfiguracją aplikacji w OpenShift. Moduł ten dokonuje głębokiej analizy fundamentalnych obiektów Kubernetes – `ConfigMap` i `Secret` – oraz bada ewolucję wzorców konsumpcji, od ręcznej iniekcji po zautomatyzowane mechanizmy `Service Binding` oparte na Operatorach.
 
------
+---
 
 ## Lekcja 7.1: `ConfigMap` – Architektura i Zarządzanie Konfiguracją Niejawną
 
-### 1.1 Analiza Obiektu `ConfigMap`: Rola w Oddzielaniu Konfiguracji
+### 7.1.1. Analiza Obiektu `ConfigMap`: Rola w Oddzielaniu Konfiguracji
 
 Obiekt `ConfigMap` jest fundamentalnym zasobem API Kubernetes, zaprojektowanym do przechowywania danych konfiguracyjnych, które nie mają charakteru wrażliwego.[1, 2] Dane te są przechowywane w prostej strukturze klucz-wartość.
 
@@ -22,11 +22,11 @@ Struktura obiektu `ConfigMap` rozróżnia dwa typy danych:
 1.  **`data`**: Przechowuje dane w formacie tekstowym, zakładając kodowanie UTF-8.
 2.  **`binaryData`**: Używane do przechowywania danych binarnych (non-UTF8), na przykład certyfikatów lub plików Java keystore. Dane w tym polu są automatycznie kodowane w Base64.[2]
 
-### 1.2 Strategie Tworzenia: Imperatywne Zarządzanie danymi konfiguracyjnymi (`oc create configmap`)
+### 7.1.2. Strategie Tworzenia: Imperatywne Zarządzanie danymi konfiguracyjnymi (`oc create configmap`)
 
 Platforma OpenShift, używając klienta `oc` (kompatybilnego z `kubectl`), dostarcza potężnych, imperatywnych poleceń do tworzenia obiektów `ConfigMap` bez konieczności ręcznego pisania plików YAML.
 
-#### Metoda 1: Tworzenie z Wartości Literalnych (`--from-literal`)
+#### 7.1.2.1. Metoda 1: Tworzenie z Wartości Literalnych (`--from-literal`)
 
 Ta metoda jest używana do bezpośredniego definiowania par klucz-wartość w wierszu poleceń. Jest to idealne rozwiązanie dla prostych wartości lub parametrów generowanych dynamicznie w skryptach.[4]
 
@@ -43,7 +43,7 @@ $ oc create configmap special-config \
 
 Metoda ta jest bardziej elastyczna, niż się wydaje. Możliwe jest przekazywanie złożonych struktur, takich jak całe obiekty JSON, pod warunkiem odpowiedniego ich opakowania w cudzysłowy, aby powłoka (shell) zinterpretowała je jako pojedynczy literał.[5]
 
-#### Metoda 2: Tworzenie z Plików (`--from-file`)
+#### 7.1.2.2. Metoda 2: Tworzenie z Plików (`--from-file`)
 
 Jest to najczęściej stosowana i najbardziej elastyczna metoda, pozwalająca na tworzenie `ConfigMap` bezpośrednio z zawartości istniejących plików. Występuje w trzech wariantach:
 
@@ -83,7 +83,7 @@ $ oc create configmap game-config-3 \
 [4]
 *Rezultat:* `ConfigMap` o nazwie `game-config-3`. Polecenie `oc get configmaps game-config-3 -o yaml` pokaże w sekcji `data` klucz o nazwie `game-special-key`.[4]
 
-#### Metoda 3: Tworzenie Deklaratywne (z pliku YAML)
+#### 7.1.2.3. Metoda 3: Tworzenie Deklaratywne (z pliku YAML)
 
 Standardowe podejście deklaratywne polega na zdefiniowaniu obiektu `ConfigMap` w pliku YAML i zaaplikowaniu go za pomocą `oc apply`.[6] Jest to preferowane w systemach kontroli wersji (GitOps).
 
@@ -105,7 +105,7 @@ data:
 [6]
 Następnie stosuje się polecenie: `$ oc apply -f configmap.yaml`.
 
-### 1.3 Zaawansowane Wzorce Zarządzania i Wnioski
+### 7.1.3. Zaawansowane Wzorce Zarządzania i Wnioski
 
 W zaawansowanych potokach CI/CD (Continuous Integration/Continuous Deployment) często pojawia się problem: jak w sposób idempotentny (powtarzalny) zaktualizować `ConfigMap` na podstawie plików, które właśnie się zmieniły, nie polegając na statycznym pliku YAML?
 
@@ -129,11 +129,11 @@ Analiza tego polecenia ujawnia jego działanie:
 
 Ten wzorzec jest kluczowy dla zautomatyzowanych, idempotentnych wdrożeń, umożliwiając zarządzanie konfiguracją wprost z plików źródłowych bez pośrednich artefaktów YAML.
 
------
+---
 
 ## Lekcja 7.2: `Secret` – Bezpieczne Zarządzanie Danymi Wrażliwymi
 
-### 2.1 Fundamentalna Różnica: Kodowanie Base64 vs. Szyfrowanie
+### 7.2.1. Fundamentalna Różnica: Kodowanie Base64 vs. Szyfrowanie
 
 Obiekt `Secret` jest mechanizmem Kubernetes do przechowywania i zarządzania niewielkimi ilościami danych wrażliwych, takich jak hasła, tokeny OAuth czy klucze API.[9, 10] Podobnie jak `ConfigMap`, oddziela on dane (tym razem wrażliwe) od specyfikacji Poda i obrazu kontenera.[10]
 
@@ -160,7 +160,7 @@ Prawdziwe bezpieczeństwo obiektu `Secret` opiera się na dwóch filarach:
 1.  **Szyfrowanie w Spoczynku (At-Rest):** Prawdziwą ochronę zapewnia skonfigurowanie szyfrowania magazynu danych `etcd` na poziomie klastra OpenShift. Gdy ta funkcja jest włączona, obiekty `Secret` są szyfrowane *przed* zapisaniem ich na dysku w `etcd`.[12, 13]
 2.  **Kontrola Dostępu (RBAC):** `Secret` jest standardowym obiektem API, więc dostęp do niego (pobieranie, odczytywanie, modyfikowanie) jest ściśle kontrolowany przez mechanizmy RBAC (Role-Based Access Control).[12] Jest to główna warstwa ochrony danych "w użyciu" (in-use).
 
-### 2.2 Anatomia Obiektu `Secret`: Pola `data` vs. `stringData`
+### 7.2.2. Anatomia Obiektu `Secret`: Pola `data` vs. `stringData`
 
 Definicja YAML obiektu `Secret` oferuje dwa pola do dostarczania danych, co ma kluczowe znaczenie dla ergonomii pracy (Developer Experience):
 
@@ -171,7 +171,7 @@ Mechanizm działania `stringData` jest następujący: gdy serwer API otrzymuje o
 
 Zastosowanie `stringData` rozwiązuje fundamentalny problem pracy z Sekretami w systemach kontroli wersji Git. Pole `data` (np. `dmFsdWUtMQ0K`) jest nieczytelne dla człowieka. Przeglądając zmiany (diff) w Git, nie można stwierdzić, jaka wartość hasła uległa zmianie. `stringData` pozwala na przechowywanie sekretów w czytelnej formie w YAML (zakładając, że samo repozytorium Git jest odpowiednio zabezpieczone), co drastycznie ułatwia przeglądy kodu (code reviews) i audyt zmian.
 
-### 2.3 Taksonomia Typów Sekretów: Analiza Porównawcza
+### 7.2.3. Taksonomia Typów Sekretów: Analiza Porównawcza
 
 Kubernetes i OpenShift definiują różne `typy` Sekretów. Typ służy do walidacji formatu danych oraz do sygnalizowania innym komponentom systemu (np. kontrolerowi Ingress), jak dany Sekret powinien być interpretowany.[13, 14, 15]
 
@@ -201,17 +201,17 @@ Poniższa tabela podsumowuje kluczowe typy sekretów.
 | `kubernetes.io/docker-registry` | Dane logowania do prywatnego rejestru obrazów. | `.dockerconfigjson` | `oc create secret docker-registry reg-creds --docker-username=...` [19] |
 | `kubernetes.io/tls` | Para kluczy dla certyfikatów TLS (HTTPS). | `tls.crt`, `tls.key` | `oc create secret tls my-tls-cert --cert=... --key=...` [20, 21] |
 
------
+---
 
 ## Lekcja 7.3: Podłączanie Konfiguracji do Podów (Zmienne vs. Wolumeny)
 
 Gdy `ConfigMap` lub `Secret` istnieje już w klastrze, można go udostępnić (skonsumować) w Podach na dwa główne sposoby: jako zmienne środowiskowe lub jako pliki w zamontowanym wolumenie.[1, 2]
 
-### 3.1 Podejście 1: Wstrzykiwanie jako Zmienne Środowiskowe (`env` / `envFrom`)
+### 7.3.1. Podejście 1: Wstrzykiwanie jako Zmienne Środowiskowe (`env` / `envFrom`)
 
 Ta metoda udostępnia dane konfiguracyjne aplikacji poprzez standardowe zmienne środowiskowe procesu.
 
-#### Projekcja pojedynczych kluczy (`env`)
+#### 7.3.1.1. Projekcja pojedynczych kluczy (`env`)
 
 Użycie sekcji `env` w specyfikacji kontenera pozwala na precyzyjne mapowanie jednego klucza z `ConfigMap` lub `Secret` do konkretnej nazwy zmiennej środowiskowej.[22]
 
@@ -232,7 +232,7 @@ spec:
 
 [22, 23]
 
-#### Projekcja całych obiektów (`envFrom`)
+#### 7.3.1.2. Projekcja całych obiektów (`envFrom`)
 
 Użycie sekcji `envFrom` pozwala na hurtowe zaimportowanie *wszystkich* kluczy z danego `ConfigMap` lub `Secret` jako zmiennych środowiskowych. Nazwy kluczy w obiekcie stają się nazwami zmiennych środowiskowych w kontenerze.[22, 24] Jest to wygodniejsze, gdy aplikacja oczekuje wielu wartości konfiguracyjnych.[24]
 
@@ -250,7 +250,7 @@ spec:
 
 [25]
 
-### 3.2 Podejście 2: Montowanie jako Wolumeny (Pliki w Systemie Plików)
+### 7.3.2. Podejście 2: Montowanie jako Wolumeny (Pliki w Systemie Plików)
 
 Ta metoda jest niezbędna, gdy aplikacja oczekuje swojej konfiguracji w postaci plików (np. `nginx.conf`, `settings.xml`, certyfikaty).[2]
 
@@ -284,24 +284,24 @@ Dostępne są również zaawansowane opcje montowania:
   * **`subPath`**: Umożliwia zamontowanie *tylko jednego klucza* (pliku) z `ConfigMap` w konkretnym miejscu, zamiast całego katalogu. Jest to kluczowe, aby np. zastąpić plik `/data/conf/server.xml` bez nadpisywania całego katalogu `/data/conf`.[25]
   * **`items`**: Pozwala na precyzyjne mapowanie, które klucze mają być zamontowane oraz jakie mają mieć nazwy plików i uprawnienia w docelowym wolumenie.[3]
 
-### 3.3 Kluczowa Analiza: Dynamika Aktualizacji Konfiguracji
+### 7.3.3. Kluczowa Analiza: Dynamika Aktualizacji Konfiguracji
 
 Wybór między zmiennymi środowiskowymi a wolumenami ma fundamentalne znaczenie dla sposobu, w jaki aplikacja obsługuje *aktualizacje* konfiguracji.
 
-#### Scenariusz 1: Aktualizacja `ConfigMap`/`Secret` używanego w *zmiennych środowiskowych*
+#### 7.3.3.1. Scenariusz 1: Aktualizacja `ConfigMap`/`Secret` używanego w *zmiennych środowiskowych*
 
   * **Mechanizm:** Zmienne środowiskowe są wstrzykiwane przez `kubelet` do kontenera *tylko w momencie jego tworzenia*. Stają się one niezmienną (immutable) częścią środowiska startowego procesu (PID 1).[26]
   * **Rezultat:** Jakakolwiek późniejsza zmiana w obiekcie `ConfigMap` lub `Secret` **NIE JEST** propagowana do już działających Podów.[27, 26, 28] Działające Pody będą kontynuować pracę ze starymi, nieaktualnymi wartościami zmiennych.
   * **Wymagane działanie:** Aby zmiany zostały odzwierciedlone, **Pod musi zostać zrestartowany (usunięty i odtworzony)**.[27, 29]
 
-#### Scenariusz 2: Aktualizacja `ConfigMap`/`Secret` montowanego jako *wolumen*
+#### 7.3.3.2. Scenariusz 2: Aktualizacja `ConfigMap`/`Secret` montowanego jako *wolumen*
 
   * **Mechanizm:** Wolumeny typu `ConfigMap` i `Secret` są obsługiwane dynamicznie. `Kubelet` na każdym węźle *obserwuje* (watches) obiekty API, z których montuje pliki. Gdy obiekt w `etcd` ulegnie zmianie, `kubelet` *automatycznie i okresowo* synchronizuje te zmiany, aktualizując zawartość plików w zamontowanym wolumenie wewnątrz kontenera.[27, 30]
   * **Rezultat:** Pliki konfiguracyjne wewnątrz kontenera są aktualizowane "na żywo", *bez konieczności restartu Poda*.[26]
 
 Podejście wolumenowe, choć wydaje się elastyczniejsze, kryje w sobie pułapkę. Załóżmy, że deweloper zaktualizował `ConfigMap`. `Kubelet` poprawnie zaktualizował plik `/etc/config/settings.xml` wewnątrz Poda. Jednak aplikacja (np. serwer Spring Boot) nadal działa ze starą konfiguracją. Dzieje się tak, ponieważ większość aplikacji wczytuje swoje pliki konfiguracyjny *tylko raz* podczas startu i buforuje (cache'uje) te ustawienia w pamięci.
 
-`Kubelet` aktualizuje plik na dysku, ale nie ma standardowego mechanizmu, aby wysłać sygnał (np. `SIGHUP`) do procesu aplikacji, aby ta *ponownie odczytała* plik. Oznacza to, że użycie wolumenów przenosi odpowiedzialność za obsługę "hot reload" z platformy (Kubernetes) na *aplikację*. Aplikacja musi być napisana w taki sposób, aby aktywnie monitorować zmiany w pliku konfiguracyjjnym (np. poprzez mechanizmy `fsnotify`) lub musi być wspierana przez dodatkowy kontener "sidecar" (jak popularny `Reloader` [26]), który wykrywa zmiany i wysyła sygnał do głównego procesu.
+`Kubelet` aktualizuje plik na dysku, ale nie ma standardowego mechanizmu, aby wysłać sygnał (np. `SIGHUP`) do procesu aplikacji, aby ta *ponownie odczytała* plik. Oznacza to, że użycie wolumenów przenosi odpowiedzialność za obsługę "hot reload" z platformy (Kubernetes) na *aplikację*. Aplikacja musi być napisana w taki sposób, aby aktywnie monitorować zmiany w pliku konfiguracyjnym (np. poprzez mechanizmy `fsnotify`) lub musi być wspierana przez dodatkowy kontener "sidecar" (jak popularny `Reloader` [26]), który wykrywa zmiany i wysyła sygnał do głównego procesu.
 
 Poniższa tabela podsumowuje oba podejścia.
 
@@ -312,7 +312,7 @@ Poniższa tabela podsumowuje oba podejścia.
 | **Wymagany Restart Poda** | **Tak,** aby odczytać nowe wartości.[29] | **Nie.** (Jednak aplikacja musi sama obsłużyć "reload" pliku). |
 | **Typowe Użycie** | Proste wartości: Hasła, URL-e, flagi, klucze API. | Całe pliki konfiguracyjne: `settings.xml`, `nginx.conf`, certyfikaty. |
 
-### 3.4 Wymuszanie Odświeżenia: Strategie Restartu Podów
+### 7.3.4. Wymuszanie Odświeżenia: Strategie Restartu Podów
 
 Biorąc pod uwagę, że iniekcja jako zmienne środowiskowe (`env`) jest powszechną i często preferowaną metodą dla 12-factor apps, kluczowe staje się zautomatyzowanie restartu Podów po zmianie konfiguracji.
 
@@ -321,7 +321,7 @@ Biorąc pod uwagę, że iniekcja jako zmienne środowiskowe (`env`) jest powszec
 
 2.  **Podejście Kubernetes (Automatyzacja): Wzorzec "Checksum Annotation"**
     Powszechnym wzorcem, często implementowanym przez narzędzia takie jak Helm, jest dodanie adnotacji do `spec.template.metadata.annotations` w obiekcie `Deployment`.[27, 31] Wartością tej adnotacji jest skrót (np. `sha256sum`) zawartości `ConfigMap` lub `Secret`.
-    *Przepływ:* Zmiana `ConfigMap` -\> zmiana skrótu -\> zmiana wartości adnotacji -\> kontroler `Deployment` wykrywa zmianę w `spec.template` -\> uruchomienie rolling update.
+    *Przepływ:* Zmiana `ConfigMap` -> zmiana skrótu -> zmiana wartości adnotacji -> kontroler `Deployment` wykrywa zmianę w `spec.template` -> uruchomienie rolling update.
 
 3.  **Podejście OpenShift (Natywne): `DeploymentConfig` Trigger `ConfigChange`**
     Historyczny zasób OpenShift, `DeploymentConfig` (DC), posiada znaczącą przewagę nad standardowym `Deployment` Kubernetes w tym kontekście. `DeploymentConfig` ma wbudowany, natywny trigger typu `ConfigChange`.[32]
@@ -340,11 +340,11 @@ Biorąc pod uwagę, że iniekcja jako zmienne środowiskowe (`env`) jest powszec
 
     Kontroler `DeploymentConfig` w OpenShift jest bardziej zaawansowany. Aktywnie *rozwiązuje* on referencje do `ConfigMap` i `Secret` używanych w szablonie Poda i *obserwuje* (watches) te obiekty. Dzięki temu, jakakolwiek zmiana w monitorowanym obiekcie `ConfigMap` lub `Secret` jest natychmiast wykrywana po stronie serwera i *automatycznie* uruchamia nowe wdrożenie (rolling update).[33] Jest to wbudowane, w pełni zautomatyzowane rozwiązanie problemu nieaktualnej konfiguracji.
 
------
+---
 
 ## Lekcja 7.4: `Service Binding` – Nowoczesne Łączenie Aplikacji z Usługami
 
-### 4.1 Identyfikacja Problemu: Ręczne Zarządzanie Połączeniami ("Stary Sposób")
+### 7.4.1. Identyfikacja Problemu: Ręczne Zarządzanie Połączeniami ("Stary Sposób")
 
 W miarę dojrzewania ekosystemów chmurowych, aplikacje coraz rzadziej istnieją w izolacji. Zazwyczaj muszą komunikować się z wieloma usługami wspierającymi (backing services), takimi jak bazy danych, kolejki komunikatów czy usługi cache, które same są zarządzane przez Operatory.
 
@@ -362,13 +362,13 @@ Wady tego podejścia są znaczące [34, 38, 37]:
   * **Ścisłe powiązanie (Tightly Coupled):** Aplikacja jest teraz ściśle powiązana ze szczegółami implementacyjnymi Operatora Bazy Danych. Jeśli Operator w nowej wersji zmieni schemat nazewnictwa sekretów, wszystkie podłączone aplikacje przestaną działać.
   * **Naruszenie separacji (Separation of Concerns):** Deweloper aplikacji musi posiadać wiedzę (a często także uprawnienia RBAC) na temat zasobów należących do innej usługi.
 
-### 4.2 Nowy Paradygmat: Architektura Oparta na Operatorach (`Service Binding Operator`)
+### 7.4.2. Nowy Paradygmat: Architektura Oparta na Operatorach (`Service Binding Operator`)
 
 Rozwiązaniem tego problemu jest `Service Binding Operator` (SBO).[34, 39] Jest to Operator instalowany w klastrze (często domyślnie w OpenShift), którego jedynym zadaniem jest automatyzacja procesu "sklejania" (binding) Aplikacji z Usługami.[34]
 
 SBO jest implementacją otwartej specyfikacji `servicebinding.io`.[40, 41, 42] Celem tej specyfikacji jest stworzenie jednolitego, przewidywalnego i deklaratywnego standardu komunikowania sekretów serwisowych do obciążeń (workloads) w całym ekosystemie Kubernetes.[36]
 
-### 4.3 Analiza CRD `ServiceBinding`: Jak to działa?
+### 7.4.3. Analiza CRD `ServiceBinding`: Jak to działa?
 
 `Service Binding Operator` (SBO) wprowadza nowy zasób (CRD) o nazwie `ServiceBinding`. Przepływ pracy jest następujący [34, 43]:
 
@@ -398,7 +398,7 @@ SBO wstrzykuje dane do Poda Aplikacji w ustandaryzowany sposób.[37]
   * Wewnątrz tego katalogu Aplikacja znajdzie podkatalogi dla każdego powiązania (np. `/bindings/my-database`), a w nich pliki: `type` (np. `postgresql`), `provider` oraz pliki z danymi: `username`, `password`, `uri` itp..[37]
   * Nowoczesne frameworki, takie jak `Spring Cloud Bindings` [37], są zaprogramowane tak, aby automatycznie wykrywać zmienną `SERVICE_BINDING_ROOT` i konfigurować połączenie z bazą danych bez żadnej dodatkowej konfiguracji po stronie aplikacji.
 
-### 4.4 Wnioski: Odwrócenie Zależności i Prawdziwe Oddzielenie
+### 7.4.4. Wnioski: Odwrócenie Zależności i Prawdziwe Oddzielenie
 
 `Service Binding` fundamentalnie zmienia paradygmat zarządzania konfiguracją, wprowadzając wzorzec znany jako *Inwersja Kontroli* (Inversion of Control - IoC) do świata infrastruktury.
 
@@ -408,7 +408,10 @@ SBO wstrzykuje dane do Poda Aplikacji w ustandaryzowany sposób.[37]
 `Service Binding Operator` [35] działa jak *pośrednik* (mediator), który dopasowuje opublikowane dane od Usługi do żądania Aplikacji i zarządza całym procesem wstrzykiwania.
 
 To *odwrócenie modelu zależności* jest kluczowe. Aplikacje nie muszą już wiedzieć *jak* połączyć się z usługą; muszą tylko wiedzieć *że* chcą się połączyć. Cała logika "jak" jest abstrahowana przez Operatora SBO i kontrakt `servicebinding.io`.[36] To radykalnie zwiększa przenośność (portability) aplikacji i niezależność (decoupling) usług w nowoczesnych architekturach opartych na Operatorach.[34, 35, 37]
-#### **Cytowane prace**
+
+---
+
+## Cytowane prace
 
 1. ConfigMaps \- Kubernetes, otwierano: listopada 15, 2025, [https://kubernetes.io/docs/concepts/configuration/configmap/](https://kubernetes.io/docs/concepts/configuration/configmap/)  
 2. Chapter 15\. Creating and using ConfigMaps | Builds | OpenShift Container Platform | 4.4, otwierano: listopada 15, 2025, [https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.4/html/builds/builds-configmaps](https://docs.redhat.com/en/documentation/openshift_container_platform/4.4/html/builds/builds-configmaps)  

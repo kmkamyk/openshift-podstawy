@@ -1,10 +1,16 @@
 # Moduł 6: Bezpieczeństwo – „Secure by Default”
 
+---
+
 ## Lekcja 6.1: Uwierzytelnianie – Wbudowany Serwer OAuth i Dostawcy Tożsamości (IdP)
+
+### 6.1.1. Rola Wbudowanego Serwera OAuth
 
 Architektura bezpieczeństwa platformy OpenShift rozpoczyna się od rygorystycznego procesu uwierzytelniania. W przeciwieństwie do standardowego Kubernetes, który deleguje uwierzytelnianie na zewnątrz, OpenShift Container Platform (OCP) oraz OpenShift Dedicated (OSD) zawierają wbudowany serwer OAuth.[1, 2, 3] Serwer ten działa jako centralna brama dla wszystkich użytkowników – zarówno deweloperów, jak i administratorów.
 
 Kluczowa rola tego serwera polega na tym, że użytkownicy nie uwierzytelniają się bezpośrednio w API Kubernetes. Zamiast tego, uzyskują oni tokeny dostępu OAuth od serwera OpenShift, a następnie używają tych tokenów do uwierzytelniania swoich żądań do API.[1, 2] Po świeżej instalacji klastra, jedynym dostępnym użytkownikiem jest tymczasowy `kubeadmin`.[2, 4] Dlatego kluczowym zadaniem administratora po instalacji jest skonfigurowanie serwera OAuth w celu zintegrowania go z co najmniej jednym zewnętrznym Dostawcą Tożsamości (IdP), co umożliwi użytkownikom logowanie się i dostęp do klastra.[1, 2]
+
+### 6.1.2. Konfiguracja Dostawców Tożsamości (IdP)
 
 Konfiguracja IdP odbywa się poprzez tworzenie i stosowanie niestandardowych zasobów (Custom Resources - CR), które opisują danego dostawcę.[2, 4] Platforma wspiera szeroki wachlarz standardów korporacyjnych i deweloperskich:
 
@@ -13,19 +19,27 @@ Konfiguracja IdP odbywa się poprzez tworzenie i stosowanie niestandardowych zas
   * **Dostawcy OAuth (GitHub, GitLab):** Pozwala na walidację poświadczeń bezpośrednio wobec serwerów uwierzytelniania GitHub, GitHub Enterprise lub GitLab.[1, 4] Jest to kluczowe dla organizacji zorientowanych na GitOps.
   * **htpasswd:** Umożliwia walidację na podstawie płaskiego pliku `htpasswd` zawierającego hashowane hasła.[2, 4]
 
+### 6.1.3. Filozofia "Secure by Default" w Kontekście IdP
+
 Implementacja filozofii „Secure by Default” jest widoczna w sposobie, w jaki Red Hat pozycjonuje tych dostawców. Podczas gdy dokumentacja OCP (dla wdrożeń on-premise) wymienia `htpasswd` jako standardową opcję [2, 4], dokumentacja dla zarządzanej usługi OpenShift Dedicated (OSD) zawiera krytyczne ostrzeżenie: `htpasswd` jest dołączony *tylko* w celu utworzenia *pojedynczego, statycznego użytkownika administracyjnego* do rozwiązywania problemów i *nie jest wspierany jako dostawca tożsamości do ogólnego użytku*.[1]
 
 To rozróżnienie nie jest przypadkowe. `htpasswd` jest prosty, ale nie skaluje się, nie posiada centralnego zarządzania ani polityk haseł. W usłudze zarządzanej (OSD), gdzie Red Hat gwarantuje bezpieczeństwo i stabilność, użycie `htpasswd` do ogólnego uwierzytelniania jest uznawane za antywzorzec. Platforma domyślnie promuje bezpieczne, scentralizowane i dynamiczne IdP (LDAP, OIDC), degradując statyczne, ryzykowne opcje do roli wyłącznie awaryjnej.
 
+---
+
 ## Lekcja 6.2: Autoryzacja – Podstawy Role-Based Access Control (RBAC)
 
 Po pomyślnym uwierzytelnieniu (odpowiedzi na pytanie „Kim jesteś?”), platforma musi odpowiedzieć na drugie, kluczowe pytanie: „Co możesz zrobić?”.[5] W tym miejscu do gry wkracza mechanizm autoryzacji. OpenShift, bazując na Kubernetes, wykorzystuje model Kontroli Dostępu Opartej na Rolach (Role-Based Access Control - RBAC).[5] Obiekty RBAC precyzyjnie określają, czy uwierzytelniony podmiot (użytkownik lub ServiceAccount) ma prawo do wykonania danej akcji w ramach projektu lub całego klastra.
+
+### 6.2.1. Komponenty Modelu RBAC
 
 Model RBAC składa się z trzech podstawowych komponentów [5, 6]:
 
 1.  **Rules (Reguły):** Najmniejsza jednostka uprawnień. Definiuje zestaw dozwolonych czasowników (verbs) (np. `create`, `get`, `list`, `delete`, `patch`) na zestawie obiektów/zasobów (resources) (np. `pods`, `deployments`, `configmaps`).
 2.  **Roles (Role):** Kolekcje Reguł. Grupują one reguły w logiczne zestawy uprawnień (np. „uprawnienia dewelopera”).
 3.  **Bindings (Wiązania):** Stowarzyszenia (powiązania), które łączą podmiot (Subject) – czyli Użytkownika (User), Grupę (Group) lub Konto Serwisowe (ServiceAccount) – z określoną Rolą.
+
+### 6.2.2. Dwupoziomowa Hierarchia RBAC: Cluster vs. Local
 
 Kluczem do zrozumienia modelu bezpieczeństwa i wielodostępności (multi-tenancy) w OpenShift jest jego dwupoziomowa hierarchia RBAC [5, 6, 7]:
 
@@ -38,21 +52,25 @@ Mechanizm ten rozwiązuje fundamentalny problem skalowalności uprawnień. Wyobr
 
 Dzięki modelowi OpenShift, administrator tworzy *jeden* globalny `ClusterRole` (np. `developer-permissions`). Następnie, aby nadać zespołowi A uprawnienia w projekcie A, tworzy *lokalne* `RoleBinding` w projekcie A, które wiąże grupę „Zespół A” z tym *globalnym* `ClusterRole`. Najważniejszą cechą tego modelu jest to, że **`RoleBinding` (Local RBAC) może odwoływać się do `ClusterRole` (Cluster RBAC)**.[5] To połączenie umożliwia „centralną definicję uprawnień” przy jednoczesnej „zdecentralizowanej delegacji dostępu”, co jest esencją „Secure by Default”, minimalizując błędy konfiguracyjne i zapewniając spójność.
 
+---
+
 ## Lekcja 6.3: Obiekty RBAC – Definicje i Relacje
 
 Zrozumienie dwupoziomowej hierarchii RBAC wymaga precyzyjnego zdefiniowania czterech kluczowych typów obiektów, które nią zarządzają.
 
-**Obiekty Definiujące Uprawnienia (Kolekcje Reguł):**
+### 6.3.1. Obiekty Definiujące Uprawnienia (Kolekcje Reguł)
 
   * **Role (Rola):** Jest to obiekt *namespaced*, co oznacza, że istnieje *wewnątrz* konkretnej przestrzeni nazw (projektu). Definiuje uprawnienia (kolekcję reguł) tylko do zasobów w obrębie tej samej przestrzeni nazw.[6, 7]
   * **ClusterRole (Rola Klastra):** Jest to obiekt *globalny* (non-namespaced). Może być używany do definiowania uprawnień na dwa sposoby:
     1.  Do zasobów globalnych, które nie należą do żadnej przestrzeni nazw (np. `nodes`, `clusterroles`, `scc`).
     2.  Do zasobów w przestrzeni nazw (np. `pods`, `services`) w celu ich *ponownego użycia* (reuse) w wielu projektach, jak opisano w Lekcji 6.2.[6, 7]
 
-**Obiekty Wiążące (Przypisujące Uprawnienia):**
+### 6.3.2. Obiekty Wiążące (Przypisujące Uprawnienia)
 
   * **RoleBinding (Wiązanie Roli):** Jest to obiekt *namespaced*. Przypisuje uprawnienia (zdefiniowane w `Role` lub `ClusterRole`) podmiotom (Użytkownikom, Grupom, ServiceAccounts) *tylko w obrębie* tej konkretnej przestrzeni nazw, w której `RoleBinding` istnieje.[6, 8]
   * **ClusterRoleBinding (Wiązanie Roli Klastra):** Jest to obiekt *globalny*. Przypisuje uprawnienia (zdefiniowane *tylko* w `ClusterRole`) podmiotom *w całym klastrze*.[6, 8]
+
+### 6.3.3. Wzorce Powiązań
 
 Relacje między tymi obiektami definiują model bezpieczeństwa. Istnieją cztery możliwe kombinacje, ale tylko trzy są praktyczne, a jedna z nich jest dominującym wzorcem:
 
@@ -63,9 +81,13 @@ Relacje między tymi obiektami definiują model bezpieczeństwa. Istnieją czter
 
 Model bezpieczeństwa OpenShift jest zbudowany na mistrzowskim wykorzystaniu kombinacji 2 i 3, co pozwala na granularne zarządzanie od poziomu super-administratora (kombinacja 2) do poziomu dewelopera w jednym projekcie (kombinacja 3).
 
+---
+
 ## Lekcja 6.4: Domyślne Role w Projekcie – 'admin', 'edit', 'view'
 
 Aby ułatwić zarządzanie i natychmiast wdrożyć zasadę najmniejszych uprawnień (Principle of Least Privilege - PoLP), OpenShift jest dostarczany z zestawem predefiniowanych obiektów `ClusterRole`. Są one gotowe do natychmiastowego użycia w `RoleBinding` (zgodnie ze wzorcem nr 3 z poprzedniej lekcji).[7, 9, 10]
+
+### 6.4.1. Kluczowe Role Domyślne
 
 Trzy najważniejsze domyślne role projektowe to:
 
@@ -90,9 +112,13 @@ Poniższa tabela przedstawia matrycę uprawnień dla kluczowych ról, ilustrują
 | `admin` | **Tak** [10] | **Tak** [10] | **Tak** [10] | Projekt (przez RoleBinding) |
 | `cluster-admin` | **Tak** | **Tak** | **Tak** | **Klaster** (przez ClusterRoleBinding) |
 
+### 6.4.2. Segregacja Obowiązków: `edit` vs `admin`
+
 Istnienie oddzielnych ról `edit` i `admin` jest celowym i kluczowym wyborem architektonicznym wspierającym „Secure by Default”. Najczęstszym użytkownikiem platformy jest deweloper, którego zadaniem jest wdrażanie aplikacji. Zgodnie z PoLP, deweloper (otrzymujący rolę `edit`) nie powinien mieć możliwości modyfikowania własnych uprawnień ani uprawnień kolegów z zespołu.[10]
 
 Gdyby deweloperzy domyślnie otrzymywali rolę `admin`, mogliby (przypadkowo lub celowo) eskalować swoje uprawnienia, na przykład tworząc `RoleBinding` dla swojego konta do roli `cluster-admin` (co dałoby im pełne uprawnienia administratora w tym projekcie). Domyślna rola `edit` jawnie *uniemożliwia* tę ścieżkę ataku, ponieważ nie daje uprawnień do tworzenia `RoleBinding`.[10] OpenShift domyślnie sandboksuje deweloperów do zasobów *aplikacyjnych*, oddzielając ich od zasobów *administracyjnych*.
+
+---
 
 ## Lekcja 6.5: Zarządzanie RBAC – Praktyczne Zastosowanie 'oc adm policy'
 
@@ -117,9 +143,13 @@ Analiza działania tego polecenia [11] pokazuje, że:
 
 Narzędzie CLI (`oc`) jest zaprojektowane zgodnie z filozofią „Secure by Default”. Domyślnie prowadzi administratora do stosowania wzorca "globalna definicja, lokalne przypisanie". Użycie flagi `-n` [8] jest tym, co odróżnia tworzenie lokalnego powiązania od tworzenia powiązania globalnego (które wymagałoby innego polecenia, np. `oc adm policy add-cluster-role-to-user`, i nie akceptowałoby flagi `-n`).
 
+---
+
 ## Lekcja 6.6: SecurityContextConstraints (SCC) – Kluczowy Wyróżnik OpenShift
 
 Podczas gdy RBAC (Lekcje 6.2-6.5) kontroluje, co *użytkownicy* mogą robić w API, Security Context Constraints (SCC) kontrolują, co *pody* mogą robić w systemie operacyjnym hosta.[14, 15] SCC są zasobami *specyficznymi dla OpenShift* [16, 17] i stanowią jeden z najważniejszych filarów filozofii „Secure by Default”.
+
+### 6.6.1. Definicja i Cel SCC
 
 SCC to kontroler dostępu (admission controller) dla podów.[18] Określa on zestaw warunków, jakie pod musi spełnić, aby zostać uruchomionym w klastrze. Kontrolują one krytyczne z punktu widzenia bezpieczeństwa aspekty systemowe [14, 16, 19]:
 
@@ -129,6 +159,8 @@ SCC to kontroler dostępu (admission controller) dla podów.[18] Określa on zes
   * Z jakim identyfikatorem użytkownika (UID) i grupy (GID) będzie działał proces w kontenerze.
   * Jaki kontekst SELinux zostanie mu przypisany.
 
+### 6.6.2. Podejście Mutujące vs. Walidujące
+
 Fundamentalna różnica filozoficzna między podejściem OpenShift (SCC) a podejściem standardowego Kubernetes (PSA/PSP) leży w koncepcji *mutacji* a *walidacji*.
 
 Standardowy Kubernetes (korzystający z PodSecurityAdmission, Lekcja 6.16) jest *nie-mutujący*.[20] Deweloper wysyła manifest poda. Kontroler PSA *sprawdza* (waliduje) go względem polityki. Jeśli manifest nie jest zgodny (np. nie definiuje `allowPrivilegeEscalation: false`), PSA *odrzuca* poda. Wymaga to od dewelopera jawnego zdefiniowania bezpiecznego kontekstu.
@@ -137,9 +169,13 @@ Podejście OpenShift (SCC) jest *proaktywne i mutujące*. Deweloper wysyła ten 
 
 Filozofia „Secure by Default” w OpenShift jest proaktywna. Platforma *automatycznie naprawia* (mutuje) obciążenia, aby były bezpieczne, zamiast je po prostu odrzucać. Zwalnia to dewelopera z konieczności bycia ekspertem ds. `securityContext`, jednocześnie *gwarantując* (enforcing) bazowy poziom bezpieczeństwa dla wszystkich uruchamianych obciążeń.
 
+---
+
 ## Lekcja 6.7: Analiza Polityki 'restricted' SCC – Blokowanie Uruchomień jako 'root'
 
 Polityka `restricted` SCC jest kamieniem węgielnym bezpieczeństwa OpenShift. Jest to domyślna, najbardziej restrykcyjna polityka SCC stosowana dla większości uwierzytelnionych użytkowników i ich obciążeń.[14, 21, 22, 23]
+
+### 6.7.1. Kluczowe Ograniczenia Polityki `restricted`
 
 Jej kluczowe ograniczenia to [19, 22, 23]:
 
@@ -149,6 +185,8 @@ Jej kluczowe ograniczenia to [19, 22, 23]:
 4.  **Wymuszenie SELinux:** `Requires that a pod is run with a pre-allocated MCS label`.
 
 Blokowanie uruchomień jako `root` (UID 0) jest krytyczne dla bezpieczeństwa kontenerów. Procesy uprzywilejowane to te działające jako superużytkownik (root) z ID 0 na hoście.[23] Kontener uruchomiony jako `root` lub `privileged` ma uprawnienia roota *wewnątrz* i *na zewnątrz* swojej przestrzeni nazw.[23] Oznacza to, że przełamanie (escape) z takiego kontenera daje atakującemu pełną kontrolę nad węzłem hosta, a potencjalnie nad całym klastrem. Polityka `restricted` eliminuje tę fundamentalną klasę ataku u samego źródła.
+
+### 6.7.2. Problem `CrashLoopBackOff` i Wzorzec GID 0
 
 To rygorystyczne domyślne zachowanie stwarza jednak powszechny problem dla deweloperów. Wiele standardowych obrazów (np. `nginx`, `httpd`) jest zbudowanych w taki sposób, że oczekują uruchomienia jako `root`. Gdy próbują się uruchomić na OpenShift, platforma (zgodnie z `restricted` SCC) nadpisuje ich UID i przypisuje losowy, wysoki numer (np. `1000160000` [24]). Proces w kontenerze, działając jako ten losowy UID, nie może uzyskać dostępu do plików (np. `nginx.conf`), które są własnością `root` (UID 0), co prowadzi do błędu „Permission Denied” i pętli `CrashLoopBackOff`.
 
@@ -165,6 +203,8 @@ USER 1001
 ```
 
 Gdy OpenShift uruchomi ten kontener, nadpisze `USER 1001` i ustawi `uid=1000160000`, ale zachowa `gid=0`. Proces (jako UID 1000160000) będzie mógł odczytywać i zapisywać pliki, ponieważ należy do grupy (GID 0), która ma do nich uprawnienia. W ten sposób rygorystyczna polityka bezpieczeństwa *runtime'u* (`restricted` SCC) *bezpośrednio wymusza* na deweloperach stosowanie praktyk „Shift-Left” i budowanie bezpieczniejszych, nieuprzywilejowanych obrazów.[24]
+
+---
 
 ## Lekcja 6.8: Porównanie Polityk SCC: 'restricted' vs. 'anyuid' vs. 'privileged'
 
@@ -202,6 +242,8 @@ Poniższa tabela (oparta na [22, 25]) zapewnia szybki przewodnik decyzyjny.
 | Wymaga SELinux | `RunAsAny` (Dowolny) | `MustRunAs` (Przydzielony) | `MustRunAs` (Przydzielony) |
 | **Typowy Przypadek Użycia** | Administracja klastrem | Aplikacje Legacy (np. baza danych wymagająca UID 999) | Domyślny dla aplikacji |
 
+### 6.8.1. Zastosowanie `anyuid` w Praktyce
+
 Istnienie polityki `anyuid` jest kluczowe dla zarządzania długiem technicznym i starszymi aplikacjami. Rozważmy typowy przepływ pracy: deweloper próbuje wdrożyć obraz (np. `postgres:14`). Wdrożenie kończy się niepowodzeniem, ponieważ domyślna polityka `restricted` SCC próbuje uruchomić je jako `uid=1000170000`, ale obraz `postgres` *musi* działać jako użytkownik `postgres` (np. UID 999), aby mieć dostęp do swoich plików danych.
 
 Administrator ma trzy opcje:
@@ -211,6 +253,8 @@ Administrator ma trzy opcje:
 3.  **Rozwiązanie kompromisowe (Dług Techniczny):** Deweloper nie może lub nie chce przebudować obrazu (np. jest to obraz COTS od zewnętrznego dostawcy). Administrator nadaje SA poda politykę `anyuid`.[22]
 
 Polityka `anyuid` jest kluczowym narzędziem dla administratorów OpenShift do zarządzania *wyjątkami bezpieczeństwa*. Pozwala na uruchomienie starszych lub źle zbudowanych obrazów (które wymagają *konkretnego*, ale *nie-rootowego* UID) bez udzielania im katastrofalnych uprawnień `privileged`.
+
+---
 
 ## Lekcja 6.9: Mapowanie SCC do Podów poprzez ServiceAccount (SA)
 
@@ -229,11 +273,15 @@ Proces admisji i mapowania przebiega następująco:
 
 Tożsamość Poda (SA) jest kluczem. Bezpieczeństwo jest zarządzane nie poprzez edycję podów, ale poprzez zarządzanie *uprawnieniami tożsamości poda* (SA) za pomocą standardowych narzędzi RBAC. Jest to elegancki, abstrakcyjny model, który wspiera automatyzację i GitOps. Zamiast zmieniać SCC, administrator po prostu zmienia `RoleBinding` dla SA, aby przyznać mu dostęp do innej polityki (np. z `restricted` na `anyuid`).
 
+---
+
 ## Lekcja 6.10: Podstawy ServiceAccount (SA) – Tożsamość dla Aplikacji
 
 ServiceAccount (SA) zapewnia tożsamość dla *procesów* (a nie dla ludzi), które działają wewnątrz Poda.[28, 29] Jest to kluczowy obiekt API, który umożliwia komponentom (np. aplikacji w kontenerze, kontrolerowi replikacji) uwierzytelnianie się i interakcję z API Kubernetes/OpenShift bez konieczności używania poświadczeń zwykłego użytkownika.[29] Przykłady obejmują aplikację monitorującą, która musi odpytywać API o listę podów, lub kontroler replikacji, który musi tworzyć nowe pody.[29]
 
 Każdy SA ma unikalną nazwę użytkownika w formacie: `system:serviceaccount:<project>:<name>`.[29, 30]
+
+### 6.10.1. Sekrety Powiązane z SA
 
 Gdy tworzone jest SA, platforma automatycznie generuje i kojarzy z nim dwa kluczowe sekrety [29, 31]:
 
@@ -241,6 +289,8 @@ Gdy tworzone jest SA, platforma automatycznie generuje i kojarzy z nim dwa klucz
 2.  **Sekret Rejestru:** Poświadczenia (credentials) dla wewnętrznego rejestru obrazów OpenShift.
 
 Sekrety te są następnie automatycznie montowane (jako woluminy) do podów, które używają danego SA, umożliwiając im natychmiastową komunikację z API i rejestrem.
+
+### 6.10.2. Ewolucja Bezpieczeństwa Tokenów
 
 Sposób zarządzania tokenami API dla SA przeszedł znaczną ewolucję w kierunku „Secure by Default”. Starsze dokumentacje [29, 31] wspominają o automatycznie generowanych tokenach, które *nie wygasają* (non-expiring). Jest to znaczące ryzyko bezpieczeństwa: jeśli taki statyczny token zostanie skradziony z sekretu, atakujący ma stały dostęp (ograniczony jedynie przez RBAC danego SA).
 
@@ -250,6 +300,8 @@ Nowoczesne wersje Kubernetes i OpenShift (od OCP 4.11+) [29] wprowadzają i pref
   * **Powiązanie z obiektem:** Ich żywotność jest powiązana z żywotnością poda. Gdy pod jest usuwany, token jest unieważniany.
 
 Platforma aktywnie ewoluuje, odchodząc od ryzykownych, statycznych tokenów na rzecz bezpieczniejszych, automatycznie rotowanych tokenów powiązanych z obciążeniem, co drastycznie zmniejsza powierzchnię ataku w przypadku kompromitacji.
+
+---
 
 ## Lekcja 6.11: Domyślne Konta Serwisowe – 'default', 'builder', 'deployer'
 
@@ -280,6 +332,8 @@ Ta automatyczna segregacja obowiązków jest doskonałym przykładem PoLP w prak
 
 Promień rażenia (blast radius) w przypadku kompromitacji poda aplikacyjnego jest, domyślnie, drastycznie ograniczony.
 
+---
+
 ## Lekcja 6.12: Zarządzanie Sekretami – Przypisywanie Image Pull Secrets do ServiceAccount
 
 Domyślne uprawnienia (Lekcja 6.11) pozwalają na pobieranie obrazów z *wewnętrznego* rejestru OpenShift. Jednak w scenariuszach korporacyjnych, aplikacje często zależą od obrazów przechowywanych w *prywatnych, zewnętrznych* rejestrach (np. Docker Hub, Red Hat Quay.io, Artifactory). Aby pobrać taki obraz, pod potrzebuje poświadczeń (tokena lub pary login/hasło).[33]
@@ -301,6 +355,8 @@ Metoda 2 (łączenie z SA) jest fundamentalnie bezpieczniejsza i bardziej zgodna
 
 Metoda 2 tworzy czystą abstrakcję. Administrator jest odpowiedzialny za *jednorazowe* skonfigurowanie projektu i powiązanie sekretu z SA (można to nawet zautomatyzować w szablonie projektu [35]). Deweloper po prostu wdraża aplikację, używając `default` SA. Platforma OpenShift *automatycznie wstrzykuje* niezbędne `imagePullSecrets` (zdefiniowane w SA) do definicji poda podczas jego tworzenia. Deweloper nie musi (i nie powinien) zarządzać poświadczeniami ani nawet znać ich nazw.
 
+---
+
 ## Lekcja 6.13: Koncepcja 'Shift-Left' Security w Kontekście DevSecOps
 
 „Shift-Left” Security jest fundamentalną zasadą nowoczesnej praktyki DevSecOps.[36] Nazwa odnosi się do osi czasu Cyklu Życia Oprogramowania (SDLC), wizualizowanego jako proces od lewej (planowanie, kodowanie) do prawej (wdrożenie, utrzymanie). „Shift-Left” oznacza przesuwanie zagadnień, testów i walidacji bezpieczeństwa jak najwcześniej – czyli „w lewo” – w tym procesie.[37, 38]
@@ -317,6 +373,8 @@ Polityki bezpieczeństwa OpenShift (SCC, Lekcja 6.7) działają jako potężny, 
 
 W ten sposób rygorystyczne bezpieczeństwo *runtime'u* („Secure by Default”) w OpenShift *wymusza* na zespołach deweloperskich przyjęcie praktyk „Shift-Left”. Nie mogą one dłużej ignorować bezpieczeństwa budowanych obrazów (np. zasady non-root). Platforma tworzy pętlę sprzężenia zwrotnego: „Twoje wdrożenie zawiodło, ponieważ obraz jest niezgodny z polityką bezpieczeństwa. Wróć, napraw obraz (zastosuj „Shift-Left”) i spróbuj ponownie”.
 
+---
+
 ## Lekcja 6.14: Skanowanie Obrazów: Red Hat Quay i Komponent Clair
 
 Jedną z metod implementacji „Shift-Left” jest użycie zintegrowanego stosu technologicznego Red Hat, który składa się z rejestru Red Hat Quay oraz zintegrowanego silnika skanowania Clair.
@@ -329,6 +387,8 @@ Proces skanowania jest zautomatyzowany: gdy nowy obraz jest wypychany (`docker p
 Podczas wdrażania Quay na platformie OpenShift, *zdecydowanie zalecaną* metodą jest użycie **Operatora Quay**.[41] Jest to kluczowy element strategii „Secure by Default”. Zamiast ręcznej, skomplikowanej instalacji i konfiguracji obu komponentów, administrator po prostu instaluje Operator Quay. Operator ten automatycznie wdraża i konfiguruje *zarówno* Quay, jak i Clair, zapewniając, że skanowanie bezpieczeństwa jest włączone i poprawnie skonfigurowane „out-of-the-box”.[41]
 
 Tworzy to kompletny, zautomatyzowany i bezpieczny łańcuch dostaw oprogramowania: deweloper (lub potok CI) wypycha obraz do Quay, a Quay/Clair automatycznie go skanuje. Następnie, kontrolery admisji w OpenShift mogą być skonfigurowane tak, aby *blokowały* pobieranie (pull) obrazów z Quay, które posiadają krytyczne podatności, domykając pętlę DevSecOps.
+
+---
 
 ## Lekcja 6.15: Integracja Skanowania w Potoku CI/CD – Przykład z Użyciem Trivy
 
@@ -343,6 +403,8 @@ Potok Tekton (zdefiniowany jako `Pipeline` w YAML) składa się z zadań (Tasks)
 3.  **Skanowanie Zdalne Obrazu:** Po wypchnięciu obrazu do zdalnego repozytorium (np. Artifactory, Quay). Działa to jako ostateczna *walidacja* i *punkt audytu*. Potwierdza, że obraz w rejestrze (tzw. „złoty obraz”) jest dokładnie tym, co zostało przeskanowane i jest wolny od luk. Ten raport ze skanowania może być następnie użyty przez kontrolery admisji do zablokowania wdrożenia.[40]
 
 To wielopunktowe skanowanie nie jest redundancją. Jest to dojrzała praktyka DevSecOps, która stosuje „obronę w głąb”, dostarczając odpowiednich informacji zwrotnych na odpowiednim etapie, minimalizując tarcie dla deweloperów, jednocześnie maksymalizując bezpieczeństwo.
+
+---
 
 ## Lekcja 6.16: Ewolucja Zabezpieczeń Kubernetes: PodSecurityAdmission (PSA) vs. PodSecurityPolicy (PSP)
 
@@ -362,6 +424,8 @@ Wprowadzenie PSA przez upstream Kubernetes stworzyło dla OpenShift fundamentaln
 
 Red Hat stanął przed dylematem: Jak zachować zgodność z upstream Kubernetes (PSA) i jednocześnie utrzymać swój nadrzędny, sprawdzony i bardziej granularny (np. `anyuid`) model bezpieczeństwa (SCC)? Gdyby OpenShift po prostu włączył PSA z domyślnym `enforce=restricted`, *wszystkie* mechanizmy mutujące SCC (np. automatyczne przypisywanie UID) przestałyby działać, ponieważ nie-mutujący PSA odrzucałby te pody, zanim SCC zdążyłby je naprawić. Rozwiązanie tego dylematu jest opisane w Lekcji 6.18.
 
+---
+
 ## Lekcja 6.17: Implementacja PSA – Etykiety 'warn', 'enforce' i 'audit' na Poziomie Namespace
 
 Mechanizm konfiguracyjny `PodSecurityAdmission` (PSA) jest radykalnie prostszy niż w przypadku `PodSecurityPolicy` (PSP). Zamiast złożonych obiektów RBAC i powiązań, PSA jest konfigurowany wyłącznie poprzez *dodawanie etykiet* do obiektu `Namespace`.[50, 55, 58]
@@ -380,6 +444,8 @@ Konfiguracja ta pozwala administratorowi określić, który *profil* PSS (`privi
 Administrator może mieszać te tryby, np. egzekwować (enforce) poziom `baseline` (aby blokować znane eskalacje), ale tylko ostrzegać (warn) i audytować (audit) na poziomie `restricted`, aby zebrać dane o niezgodności bez blokowania wdrożeń.[58]
 
 Kluczową cechą PSA jest jego nie-mutujący charakter.[20] Jeśli przestrzeń nazw ma etykietę `pod-security.kubernetes.io/enforce=restricted`, a deweloper wyśle manifest poda, który nie jest *już* zgodny z tą polityką (np. nie ma `runAsNonRoot: true`), kontroler PSA *odrzuci* poda.[57] Przenosi to 100% odpowiedzialności za zgodność na dewelopera lub potok CI/CD, co jest fundamentalnie sprzeczne z filozofią „automatycznej naprawy” (mutacji) stosowaną przez SCC w OpenShift.
+
+---
 
 ## Lekcja 6.18: Synchronizacja SCC i PSA w OpenShift – Rola Etykiety 'podSecurityLabelSync'
 
@@ -420,7 +486,10 @@ Rozważmy przykład z Lekcji 6.8: administrator chce zezwolić na uruchomienie o
     b.  Kontroler **PSA** (nie-mutujący) widzi ten sam pod. Sprawdza go względem etykiet `warn` i `audit` (ustawionych na `baseline`). Pod jest zgodny z `baseline`. PSA *nie generuje żadnych ostrzeżeń ani logów audytu*.
 
 System jest *cichy*. Administratorzy nie są zalewani fałszywymi alarmami PSA dla podów, które *jawnie* zatwierdzili za pomocą bardziej granularnego systemu SCC. OpenShift używa SCC do *egzekwowania* polityki, a zsynchronizowanego PSA do *raportowania zgodności* ze standardami K8s. Jest to idealna harmonia między własną, nadrzędną filozofią bezpieczeństwa a zgodnością z otwartym standardem.
-#### **Cytowane prace**
+
+---
+
+## Cytowane prace
 
 1. Chapter 4\. Configuring identity providers | Authentication and ..., otwierano: listopada 15, 2025, [https://docs.redhat.com/en/documentation/openshift\_dedicated/4/html/authentication\_and\_authorization/sd-configuring-identity-providers](https://docs.redhat.com/en/documentation/openshift_dedicated/4/html/authentication_and_authorization/sd-configuring-identity-providers)  
 2. Chapter 6\. Understanding identity provider configuration | Authentication and authorization | OpenShift Container Platform | 4.9 | Red Hat Documentation, otwierano: listopada 15, 2025, [https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.9/html/authentication\_and\_authorization/understanding-identity-provider](https://docs.redhat.com/en/documentation/openshift_container_platform/4.9/html/authentication_and_authorization/understanding-identity-provider)  

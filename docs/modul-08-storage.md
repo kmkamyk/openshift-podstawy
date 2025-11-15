@@ -1,6 +1,8 @@
 # Moduł 8: Storage – Trwałość Danych
 
-## Wprowadzenie: Paradygmat Stanowości w Świecie Efemerycznych Kontenerów
+---
+
+## Lekcja 8.0: Wprowadzenie: Paradygmat Stanowości w Świecie Efemerycznych Kontenerów
 
 Architektura Kubernetes i OpenShift opiera się na fundamentalnym założeniu efemeryczności kontenerów. Kontenery są postrzegane jako nietrwałe jednostki obliczeniowe; mogą być zatrzymywane, niszczone i zastępowane w dowolnym momencie przez orkiestrator. System plików kontenera jest nierozerwalnie związany z jego cyklem życia – gdy kontener jest usuwany, jego dane znikają wraz z nim.[1]
 
@@ -15,9 +17,11 @@ Podstawową innowacją jest wprowadzenie dwóch oddzielnych obiektów: `Persiste
 
 Model ten pozwala deweloperom na szybkie i dynamiczne pozyskiwanie zasobów, jednocześnie dając administratorom pełną kontrolę nad infrastrukturą. Niniejszy moduł analizuje ten model, od jego podstaw (PV/PVC), przez mechanizmy automatyzacji (`StorageClass`), aż po zintegrowane, produkcyjne rozwiązania (ODF) i strategie ochrony danych (Snapshot/Backup).
 
+---
+
 ## Lekcja 8.1: `PersistentVolume` (PV) i `PersistentVolumeClaim` (PVC)
 
-### 8.1.1 `PersistentVolume` (PV): "Dysk" jako Zasób Klastra
+### 8.1.1. `PersistentVolume` (PV): "Dysk" jako Zasób Klastra
 
 `PersistentVolume` (PV) to "kawałek pamięci masowej" (piece of storage) w klastrze, który został udostępniony (zaprowizjonowany) przez administratora lub dynamicznie przez `StorageClass`.[4]
 
@@ -48,7 +52,7 @@ spec:
     path: "/mnt/data" # Implementacja: ścieżka na hoście
 ```
 
-### 8.1.2 `PersistentVolumeClaim` (PVC): "Żądanie" Zasobu
+### 8.1.2. `PersistentVolumeClaim` (PVC): "Żądanie" Zasobu
 
 `PersistentVolumeClaim` (PVC) to *żądanie* (request) pamięci masowej przez użytkownika (dewelopera).[2, 4]
 
@@ -76,20 +80,20 @@ spec:
       storage: 3Gi # Minimalna wymagana pojemność
 ```
 
-### 8.1.3 Proces Wiązania (Binding) PV i PVC
+### 8.1.3. Proces Wiązania (Binding) PV i PVC
 
 Gdy deweloper tworzy PVC, w klastrze uruchamia się proces *wiązania* (binding). Specjalizowany kontroler Kubernetes stale monitoruje nowe obiekty PVC i próbuje znaleźć dla nich pasujący, dostępny (Available) PV.[2, 1]
 
   * **Relacja 1:1:** Wiązanie jest wyłączne. Jeden PV może być w danym momencie związany (Bound) tylko z jednym PVC.[3, 2, 1]
   * **Logika Dopasowania (w trybie statycznym):**
     1.  **`storageClassName`:** PVC musi żądać *dokładnie* tej samej `storageClassName` co PV.[4] W naszych przykładach jest to `manual`.[8]
-    2.  **`capacity`:** Pojemność (capacity) PV musi być *większa lub równa* (\>=) pojemności żądanej (requests.storage) przez PVC.[9] W naszym przykładzie PV (10Gi) \>= PVC (3Gi).[8]
+    2.  **`capacity`:** Pojemność (capacity) PV musi być *większa lub równa* (>=) pojemności żądanej (requests.storage) przez PVC.[9] W naszym przykładzie PV (10Gi) >= PVC (3Gi).[8]
     3.  **`accessModes`:** Zbiór trybów dostępu PV musi *zawierać* (być nadzbiorem) trybów żądanych przez PVC.[9] W naszym przykładzie PV (`ReadWriteOnce`) zawiera PVC (`ReadWriteOnce`).[8]
   * **Statusy:**
       * **`Pending`:** Jeśli PVC zostanie utworzone, ale żaden PV nie spełnia jego wymagań, PVC pozostaje w stanie `Pending`.[2]
       * **`Bound`:** Gdy kontroler znajdzie pasujący PV, wiąże je ze sobą. Oba obiekty przechodzą w stan `Bound`.[2, 7] Dopiero wtedy Pod może użyć PVC.
 
-### 8.1.4 Kluczowe Atrybuty: `accessModes`
+### 8.1.4. Kluczowe Atrybuty: `accessModes`
 
 `accessModes` definiują, w jaki sposób wolumen może być montowany w systemie. Jest to kluczowy atrybut definiujący możliwości backendu storage'owego.[9, 10]
 
@@ -102,9 +106,9 @@ Gdy deweloper tworzy PVC, w klastrze uruchamia się proces *wiązania* (binding)
 | `RWX` | `ReadWriteMany` | Wolumen może być zamontowany jako Read-Write (RW) przez **wiele Węzłów**.[10, 11] | Rozproszone systemy plików (np. CephFS, NFS, Azure File).[9] |
 | `RWOP` | `ReadWriteOncePod` | Wolumen może być zamontowany jako Read-Write (RW) przez **jeden Pod**.[10, 11] | Nowszy tryb (od K8s 1.22+), wspierany przez CSI, gwarantujący wyłączność na poziomie Poda. |
 
-Należy zwrócić szczególną uwagę na pułapkę interpretacyjną trybu `RWO` (`ReadWriteOnce`). Definicja mówi o *jednym Węźle*, a nie *jednym Podzie*.[11] Oznacza to, że wiele Podów *na tym samym Węźle* może jednocześnie zamontować ten sam wolumen RWO. W przypadku pamięci blokowej (jak EBS czy RBD), która nie jest klastrowym systemem plików, jednoczesny zapis przez dwa procesy (Pody) prawie na pewno doprowadzi do *uszkodzenia danych*. Tryb `RWOP` (`ReadWriteOncePod`) został wprowadzony właśnie po to, aby rozwiązać ten problem i zagwarantować prawdziwą wyłączność dla Poda, niezależnie od tego, gdzie jest on zaplanowany.[10, 11]
+Należy zwrócić szczególną uwagę na pułapkę interpretacyjną trybu `RWO` (`ReadWriteOnce`). Definicja mówi o *jednym Węźle*, a nie *jednym Podzie*.[11] Oznacza to, że wiele Podów *na tym samym Węźle* może jednocześnie zamontować ten sam wolumen RWO. W przypadku pamięci blokowej (jak EBS czy RBD), która nie jest klastrowym systemem plików, jednoczesny zapis przez dwa procesy (Pody) prawie na pewno doprowadzi do *uszkodzenia danych*. Tryb `RWOP$ (`ReadWriteOncePod`) został wprowadzony właśnie po to, aby rozwiązać ten problem i zagwarantować prawdziwą wyłączność dla Poda, niezależnie od tego, gdzie jest on zaplanowany.[10, 11]
 
-### 8.1.5 Kluczowe Atrybuty: `persistentVolumeReclaimPolicy`
+### 8.1.5. Kluczowe Atrybuty: `persistentVolumeReclaimPolicy`
 
 Polityka odzyskiwania (`reclaimPolicy`) jest definiowana na obiekcie `PersistentVolume` (PV) i określa, co klaster ma zrobić z wolumenem (i potencjalnie fizycznym dyskiem), gdy powiązany z nim obiekt `PersistentVolumeClaim` (PVC) zostanie usunięty.[12, 13]
 
@@ -118,16 +122,18 @@ Polityka odzyskiwania (`reclaimPolicy`) jest definiowana na obiekcie `Persistent
 
 Domyślna polityka `Delete` dla dynamicznie tworzonych wolumenów jest częstą przyczyną utraty danych produkcyjnych.[13] Deweloper, usuwając swoją aplikację (np. poprzez `helm uninstall`), nieświadomie usuwa również PVC, co natychmiastowo i nieodwracalnie niszczy fizyczny dysk z danymi. Najlepszą praktyką dla środowisk produkcyjnych jest definiowanie `StorageClass` (omówionych w następnej lekcji) z polityką `reclaimPolicy: Retain`.[16, 17]
 
+---
+
 ## Lekcja 8.2: `StorageClass` i Dynamic Provisioning
 
-### 8.2.1 Ograniczenia Provisioningu Statycznego
+### 8.2.1. Ograniczenia Provisioningu Statycznego
 
 Model statyczny, omówiony w Lekcji 8.1, ma fundamentalne wady operacyjne:
 
 1.  **Wąskie Gardło Administracyjne:** Każde żądanie nowego wolumenu przez dewelopera wymaga ręcznej interwencji administratora (utworzenie dysku w chmurze/SAN, utworzenie manifestu PV, aplikacja w klastrze).[18, 19]
 2.  **Niewydajność Zasobów:** Administratorzy, aby uniknąć ciągłych próśb, często tworzą "na zapas" pulę statycznych PV (np. 10x 100GiB).[7] Jeśli deweloper utworzy PVC na 5GiB, zajmie jeden ze 100GiB wolumenów, marnując 95GiB, które nie mogą być użyte przez nikogo innego (z powodu wiązania 1:1).[2]
 
-### 8.2.2 `StorageClass`: "Fabryka" Wolumenów (PV)
+### 8.2.2. `StorageClass`: "Fabryka" Wolumenów (PV)
 
 `StorageClass` (SC) to obiekt API Kubernetes, który rozwiązuje powyższe problemy. Zamiast ręcznie tworzyć PV, administratorzy tworzą `StorageClass`, który działa jak "fabryka" lub "szablon" dla wolumenów.[20]
 
@@ -153,7 +159,7 @@ allowVolumeExpansion: true # Zezwalaj na powiększanie [14]
 volumeBindingMode: Immediate
 ```
 
-### 8.2.3 Przepływ Dynamicznego Provisioningu
+### 8.2.3. Przepływ Dynamicznego Provisioningu
 
 Dynamiczne provisionowanie (Dynamic Provisioning) całkowicie zmienia przepływ pracy, eliminując administratora z pętli decyzyjnej.[18, 19] Proces ten jest wyzwalany "na żądanie" (on-demand) przez samo utworzenie PVC przez dewelopera.[3, 7]
 
@@ -170,7 +176,7 @@ Dynamiczne provisionowanie (Dynamic Provisioning) całkowicie zmienia przepływ 
 9.  **Kontroler Kubernetes:** *Automatycznie wiąże (binduje)* ten nowy PV z PVC dewelopera.
 10. **Wynik:** PVC zmienia stan z `Pending` na `Bound` w ciągu kilku sekund, a Pod dewelopera może natychmiast zacząć go używać.
 
-### 8.2.4 Domyślna `StorageClass` w OpenShift Local (HostPath Provisioner)
+### 8.2.4. Domyślna `StorageClass` w OpenShift Local (HostPath Provisioner)
 
 Klaster może posiadać jedną `StorageClass` oznaczoną specjalną adnotacją: `storageclass.kubernetes.io/is-default-class: "true"`.[18, 23, 24]
 
@@ -185,9 +191,11 @@ W środowiskach deweloperskich, takich jak OpenShift Local (dawniej CodeReady Co
       * Jeśli Pod ulegnie awarii, a orkiestrator OpenShift (Scheduler) przeniesie go na *inny, zdrowy węzła* (co jest standardową procedurą zapewniania wysokiej dostępności), Pod ten straci dostęp do swoich danych, które pozostały na pierwszym węźle.
       * To zachowanie jest fundamentalnie sprzeczne z paradygmatem wysokiej dostępności i mobilności workloadów w OpenShift. Ponadto, HPP często zapisuje dane na partycji systemowej, co grozi jej zapełnieniem i destabilizacją węzła.[26]
 
+---
+
 ## Lekcja 8.3: Wprowadzenie do OpenShift Data Foundation (Rook/Ceph)
 
-### 8.3.1 "Błogosławione" Rozwiązanie: Czym jest ODF?
+### 8.3.1. "Błogosławione" Rozwiązanie: Czym jest ODF?
 
 O ile `hostPath` jest nieprodukcyjny, a tradycyjne systemy NFS/SAN wymagają zewnętrznej, skomplikowanej administracji, o tyle OpenShift Data Foundation (ODF) jest preferowanym ("błogosławionym") rozwiązaniem storage dla platformy OpenShift.
 
@@ -195,7 +203,7 @@ O ile `hostPath` jest nieprodukcyjny, a tradycyjne systemy NFS/SAN wymagają zew
   * **Integracja:** Kluczową zaletą ODF jest to, że jest *głęboko zintegrowany* z OpenShift. Jest wdrażany i zarządzany jako Operator, a jego komponenty działają jako Pody *wewnątrz* klastra.[31, 32]
   * **Rebranding:** Należy pamiętać, że OpenShift Data Foundation (ODF) to nowsza nazwa dla produktu wcześniej znanego jako *OpenShift Container Storage (OCS)*.[33] W dokumentacji i interfejsie obie nazwy mogą pojawiać się zamiennie.[34, 35]
 
-### 8.3.2 Architektura ODF: Operators, Rook i Ceph
+### 8.3.2. Architektura ODF: Operators, Rook i Ceph
 
 ODF jest doskonałym przykładem architektury opartej na wzorcu Operatora (Operator Pattern). Zamiast zarządzać zewnętrzną macierzą, administratorzy instalują Operatory, które *budują* i *autonomicznie zarządzają* rozproszonym systemem storage, wykorzystując dyski podłączone do węzłów roboczych.[30, 36]
 
@@ -206,7 +214,7 @@ Główne komponenty architektury ODF:
 3.  **Ceph:** To "mózg i mięśnie" całego rozwiązania.[38, 39] Ceph to dojrzały, potężny, zunifikowany i rozproszony system SDS. Odpowiada za replikację danych (zapewniając wysoką dostępność), samonaprawianie i udostępnianie różnych typów pamięci masowej. Jego demony (takie jak OSD - przechowujące dane, i MON - monitorujące klaster) działają jako Pody w klastrze OpenShift.[32]
 4.  **NooBaa (Multicloud Gateway - MCG):** Jest to komponent ODF odpowiedzialny za dostarczanie warstwy Object Storage (S3) oraz federację danych między różnymi chmurami.[30, 37, 39]
 
-### 8.3.3 Co Dostarcza ODF? (Block, File, Object)
+### 8.3.3. Co Dostarcza ODF? (Block, File, Object)
 
 Siłą ODF, dziedziczoną po Ceph, jest zdolność do dostarczania *wszystkich trzech* głównych typów pamięci masowej z jednego, zunifikowanego backendu. ODF automatycznie tworzy odpowiednie `StorageClasses` dla każdego z tych typów.[30, 39]
 
@@ -220,11 +228,13 @@ Siłą ODF, dziedziczoną po Ceph, jest zdolność do dostarczania *wszystkich t
 
 ODF w pełni realizuje obietnicę abstrakcji. Deweloper nie musi wiedzieć, czym jest Ceph RBD ani CephFS.[36] Administrator udostępnia mu dwie główne klasy, np. `ocs-storagecluster-ceph-rbd` (dla RWO) [40] i `ocs-storagecluster-cephfs` (dla RWX).[46] Deweloper wybiera `StorageClass` na podstawie *wymaganej funkcjonalności* (RWO vs RWX), a ODF automatycznie i dynamicznie provisionuje wolumen przy użyciu *odpowiedniej technologii* backendowej.
 
+---
+
 ## Lekcja 8.4: Wprowadzenie do Snapshotów i Backup/Restore (Koncepcja)
 
 Posiadanie trwałego wolumenu (PV) rozwiązuje problem efemeryczności kontenerów, ale nie chroni przed utratą danych (np. awarią dysku, błędem ludzkim czy atakiem ransomware). W tym celu potrzebne są mechanizmy snapshotów i backupu.
 
-### 8.4.1 `VolumeSnapshot`: "Zamrożenie Czasu" dla Danych
+### 8.4.1. `VolumeSnapshot`: "Zamrożenie Czasu" dla Danych
 
 `VolumeSnapshot` to obiekt API (zdefiniowany jako Custom Resource Definition - CRD), który pozwala na gestandaryzowany sposób tworzenia *migawki* (snapshotu) stanu wolumenu w danym punkcie czasu (point-in-time copy).[48, 49]
 
@@ -241,7 +251,7 @@ Posiadanie trwałego wolumenu (PV) rozwiązuje problem efemeryczności kontener�
 
 Snapshoty są idealne do szybkich operacji odtworzeniowych, np. wykonania migawki bazy danych tuż przed ryzykowną migracją schematu.[48, 53]
 
-### 8.4.2 Kluczowa Różnica: Snapshot vs. Backup
+### 8.4.2. Kluczowa Różnica: Snapshot vs. Backup
 
 Pojęcia snapshot i backup są często mylone, co prowadzi do katastrofalnych w skutkach błędów w strategii ochrony danych.[53]
 
@@ -260,7 +270,7 @@ Analiza tego stwierdzenia wymaga odpowiedzi na pytanie: *gdzie fizycznie przecho
 **Snapshot** chroni przed *logicznym* uszkodzeniem danych (np. przypadkowym `DROP TABLE` lub błędem aplikacji).
 **Backup** chroni przed *fizyczną* lub *totalną* katastrofą (np. awarią macierzy, zniszczeniem centrum danych, usunięciem całego klastra OpenShift).[54]
 
-### 8.4.3 Koncepcja Narzędzi: Velero i OADP
+### 8.4.3. Koncepcja Narzędzi: Velero i OADP
 
 Problem z backupem w Kubernetes jest złożony. Aplikacja to nie tylko dane na PV. To również (a może przede wszystkim) zbiór *metadanych* – dziesiątki obiektów YAML definiujących `Deployment`, `ConfigMap`, `Secret`, `Service`, `Route` itd..[54, 56]
 
@@ -289,7 +299,9 @@ Dlatego zaawansowane implementacje (np. OADP z wtyczką Data Mover jak VolSync) 
 
 Dopiero w tym modelu *zarówno* metadane (YAML), jak i dane (PV) znajdują się bezpiecznie w zewnętrznej lokalizacji, gotowe do odtworzenia po prawdziwej katastrofie.
 
-#### **Cytowane prace**
+---
+
+## Cytowane prace
 
 1. Kubernetes Persistent Volume Tutorial with PVCs \- Portworx, otwierano: listopada 15, 2025, [https://portworx.com/tutorial-kubernetes-persistent-volumes/](https://portworx.com/tutorial-kubernetes-persistent-volumes/)  
 2. What Is a Persistent Volume Claim (PVC) in Kubernetes? \- Zesty.co, otwierano: listopada 15, 2025, [https://zesty.co/finops-glossary/kubernetes-persistent-volume-claim/](https://zesty.co/finops-glossary/kubernetes-persistent-volume-claim/)  

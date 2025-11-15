@@ -1,6 +1,8 @@
 # Moduł 4: Architektura Sieci w OpenShift: Od Usług Wewnętrznych do Globalnej Ekspozycji
 
-## Wprowadzenie
+---
+
+## Lekcja 4.0: Wprowadzenie
 
 Sieci stanowią fundamentalny i zarazem jeden z najbardziej złożonych aspektów platform kontenerowych. W przypadku OpenShift (OCP), sieci ewoluowały poza standardowy model Kubernetes, oferując zintegrowane, gotowe do użytku korporacyjnego rozwiązania, które zapewniają zarówno ekspozycję aplikacji, jak i rygorystyczną izolację. Zrozumienie tego ekosystemu jest krytyczne dla administratorów platformy, architektów i zespołów DevOps.
 
@@ -13,11 +15,11 @@ Niniejszy raport techniczny stanowi wyczerpującą analizę Modułu 4, obejmują
 
 Sukces wdrożenia, skalowania i zabezpieczenia aplikacji w OpenShift jest nierozerwalnie związany z dogłębnym zrozumieniem i poprawną konfiguracją tych czterech komponentów sieciowych. Raport ten dostarcza niezbędnej wiedzy technicznej do ich mistrzowskiego opanowania.
 
------
+---
 
 ## Lekcja 4.1: Powtórka z Service – Wewnętrzny Kręgosłup Aplikacji
 
-### 1.1 Problem Efemeryczności Podów i Rola `Service`
+### 4.1.1. Problem Efemeryczności Podów i Rola `Service`
 
 Podstawową jednostką obliczeniową w Kubernetes i OpenShift jest Pod. Architektura platformy zakłada, że Pody są efemeryczne (nietrwałe).[1] Oznacza to, że mogą być tworzone, usuwane, restartowane lub przeskalowywane w dowolnym momencie. Każdy nowy Pod otrzymuje nowy, unikalny adres IP w ramach sieci klastra.[2] Poleganie na tych dynamicznie zmieniających się adresach IP Podów do komunikacji między komponentami aplikacji (np. między frontendem a backendem) jest niemożliwe i sprzeczne z zasadami projektowania aplikacji chmurowych.[3]
 
@@ -25,7 +27,7 @@ Rozwiązaniem tego problemu jest obiekt `Service`.[3] Działa on jako trwała ab
 
 Mechanizm działania opiera się na selektorach (labels). `Service` używa selektora etykiet do dynamicznego monitorowania, które Pody w klastrze pasują do jego definicji i są w stanie "zdrowym". Jednocześnie komponent `kube-proxy` (lub jego odpowiednik w nowszych implementacjach OVN-Kubernetes) na każdym węźle w klastrze programuje lokalne reguły sieciowe (np. `iptables` lub `IPVS`). Reguły te przechwytują ruch skierowany na wirtualny IP (`ClusterIP`) usługi i rozkładają go (load balancing) pomiędzy aktualnie dostępne Pody pasujące do selektora.[1, 5]
 
-### 1.2 Analiza `ClusterIP` (Domyślny Typ)
+### 4.1.2. Analiza `ClusterIP` (Domyślny Typ)
 
 `ClusterIP` jest domyślnym i najczęściej używanym typem `Service`.[4, 6] Jak sama nazwa wskazuje, platforma przydziela mu wewnętrzny, klastrowy adres IP, który jest osiągalny *wyłącznie* z wnętrza klastra.[7, 8] Żaden klient spoza klastra OpenShift nie może bezpośrednio odwołać się do tego adresu.
 
@@ -53,7 +55,7 @@ spec:
     targetPort: 8080 # Port, na którym nasłuchują docelowe Pody
 ```
 
-### 1.3 Analiza `NodePort` (Wystawianie na Węźle)
+### 4.1.3. Analiza `NodePort` (Wystawianie na Węźle)
 
 `Service` typu `NodePort` jest logicznym rozszerzeniem typu `ClusterIP`.[3, 6] Po jego utworzeniu, platforma automatycznie wykonuje dwie czynności:
 
@@ -72,7 +74,7 @@ Klient zewnętrzny może teraz uzyskać dostęp do usługi, wysyłając ruch na 
   * **Brak HA (High Availability) po stronie klienta:** Klient musi "wiedzieć", na który adres IP węzła ma trafić. Jeśli ten konkretny węzeł ulegnie awarii, połączenie zostanie zerwane (chyba że klient ma własny, zewnętrzny mechanizm load balancingu).
   * **Zarządzanie Portami:** Ręczne zarządzanie pulą portów 30000-32767 w celu uniknięcia kolizji jest niepraktyczne na dużą skalę.[3]
 
-### 1.4 Analiza `LoadBalancer` i Kontekst "OCP Local"
+### 4.1.4. Analiza `LoadBalancer` i Kontekst "OCP Local"
 
 Typ `LoadBalancer` stanowi najwyższy poziom hierarchii `Service`, będąc rozszerzeniem typu `NodePort`.[3, 6] Po jego utworzeniu, platforma automatycznie tworzy `NodePort` oraz `ClusterIP`, ale dodatkowo wykonuje *trzecią*, kluczową czynność: komunikuje się z API zewnętrznego dostawcy chmury (Cloud Provider) w celu dynamicznego utworzenia i skonfigurowania *zewnętrznego* load balancera L4 (np. AWS Elastic Load Balancer, Azure Load Balancer, GCP Network Load Balancer).[5, 13]
 
@@ -86,7 +88,7 @@ W środowiskach lokalnych (on-premise), takich jak OCP Local, vSphere, czy insta
 **Rozwiązanie dla On-Premise (MetalLB):**
 Aby zasymulować funkcjonalność chmurową w środowiskach on-premise, administratorzy muszą zainstalować dodatkowy kontroler, taki jak **MetalLB**. MetalLB (zazwyczaj instalowany jako Operator w OCP) monitoruje API Kubernetes.[15, 16, 17] Gdy wykryje żądanie utworzenia `Service` typu `LoadBalancer`, przejmuje rolę "dostawcy chmury", rezerwuje adres IP ze wstępnie skonfigurowanej puli adresów (którą zarządza) i przypisuje go do usługi, kończąc proces.[16]
 
-### 1.5 Wnioski i Analiza (Sekcja 1)
+### 4.1.5. Wnioski i Analiza (Sekcja 1)
 
 Typy `Service` Kubernetes nie są trzema odrębnymi bytami, lecz stanowią **hierarchiczną piramidę ekspozycji**.[3, 6] Zrozumienie tej zależności jest kluczowe do debugowania sieci:
 
@@ -104,13 +106,13 @@ Problem z `type: LoadBalancer` w środowiskach on-premise [15] jest fundamentaln
 | **`NodePort`** | Wewnętrzna ORAZ Zewnętrzna (przez `NodeIP:Port`) | Brak | Nie | Debugowanie, szybkie testy [9, 13] |
 | **`LoadBalancer`** | Wewnętrzna ORAZ Zewnętrzna (przez stabilny VIP) | Wymaga dostawcy chmury lub MetalLB [13, 15] | Nie | Produkcyjna ekspozycja usług L4 w chmurze [9] |
 
------
+---
 
 ## Lekcja 4.2: Route – Brama OCP do Świata
 
 Podczas gdy `Service` zapewnia fundamentalną łączność L4, nie jest rozwiązaniem wystarczającym do wystawiania aplikacji webowych (L7) na świat. Standardową odpowiedzią Kubernetes na ten problem jest obiekt `Ingress`.[1] OpenShift dostarcza jednak własne, bardziej zintegrowane rozwiązanie: `Route`.
 
-### 2.1 `Route` kontra `Ingress`: Kontekst Architektoniczny
+### 4.2.1. `Route` kontra `Ingress`: Kontekst Architektoniczny
 
 Standardowy obiekt `Ingress` w Kubernetes jest jedynie *specyfikacją API*. Definiuje on, *jak* ruch HTTP/S ma być kierowany (np. routing oparty na hoście lub ścieżce), ale sam w sobie nie *realizuje* tego routingu. Aby `Ingress` zadziałał, administrator musi ręcznie wybrać, zainstalować i skonfigurować oddzielną *implementację* – tak zwany Ingress Controller (np. Nginx Ingress Controller, Traefik).
 
@@ -118,7 +120,7 @@ Obiekt `Route` w OpenShift (z API `route.openshift.io/v1`) jest historycznie sta
 
 Kluczowa różnica polega na tym, że OpenShift dostarcza nie tylko API (`Route`), ale także w pełni zintegrowaną, zarządzaną przez platformę, działającą "out-of-the-box" implementację tego API (OpenShift Router).[18] Co ważne, nowoczesne wersje OpenShift wspierają *oba* obiekty (`Route` i `Ingress`), a domyślny OpenShift Router jest w stanie realizować reguły zdefiniowane w obu tych obiektach.[18]
 
-### 2.2 Anatomia Architektury: OpenShift Router i Ingress Operator
+### 4.2.2. Anatomia Architektury: OpenShift Router i Ingress Operator
 
 Architektura routingu w OCP składa się z dwóch kluczowych komponentów, które realizują logikę obiektu `Route`:
 
@@ -132,7 +134,7 @@ Przepływ pracy jest w pełni zautomatyzowany:
 3.  Gdy kontroler wykryje nowy `Route`, dynamicznie i bezprzerwowo (gracefully) regeneruje swoją wewnętrzną konfigurację (`haproxy.cfg`).
 4.  Ruch zewnętrzny, trafiający na Pody routera HAProxy, jest natychmiast kierowany do docelowej aplikacji zgodnie z nowo zdefiniowaną regułą.
 
-### 2.3 Mechanika Połączenia: Jak `Route` łączy się z `Service` (L7 -\> L4)
+### 4.2.3. Mechanika Połączenia: Jak `Route` łączy się z `Service` (L7 -\> L4)
 
 Zrozumienie przepływu ruchu jest kluczowe: `Route` *nie* wysyła ruchu bezpośrednio do Podów. Łączy on świat zewnętrzny (L7) ze światem wewnętrznym (L4).
 
@@ -149,7 +151,7 @@ Pełny przepływ pakietu dla żądania HTTP wygląda następująco:
 
 Ta kluczowa optymalizacja (krok 5) – gdzie router omija wirtualny IP usługi (`ClusterIP`) i `kube-proxy`, kierując ruch bezpośrednio do Podów – redukuje opóźnienia sieciowe i pozwala na implementację zaawansowanych funkcji L7, takich jak sesje lepkie (sticky sessions).[26]
 
-### 2.4 Automatyczne Generowanie: `oc expose`
+### 4.2.4. Automatyczne Generowanie: `oc expose`
 
 OpenShift zdaje sobie sprawę, że ręczne tworzenie plików YAML dla każdej usługi jest czasochłonne. Dlatego platforma oferuje polecenie `oc expose`, które automatyzuje tworzenie `Route` na podstawie istniejącego `Service`.[27, 28, 29, 30]
 
@@ -180,19 +182,19 @@ spec:
     targetPort: 8080 # Port docelowy pobrany z Service
 ```
 
-### 2.5 Wnioski i Analiza (Sekcja 2)
+### 4.2.5. Wnioski i Analiza (Sekcja 2)
 
 Architektura `Route` w OCP demonstruje klarowną **separację ról**. Deweloperzy aplikacji są odpowiedzialni za definiowanie, *co* chcą wystawić (`Service`) i *jak* ma być ono dostępne z zewnątrz (`Route`). Administratorzy Platformy są odpowiedzialni za *infrastrukturę*, która to umożliwia – zarządzają `Ingress Operator`, konfigurują domyślne domeny (`*.apps`) i skalują Pody routera.
 
 Głęboka integracja, o której mowa w zapytaniu, oznacza, że OpenShift Router (HAProxy) jest komponentem *zarządzanym przez platformę*.[18, 19] Jest on automatycznie monitorowany, aktualizowany i zabezpieczany w ramach cyklu życia OCP. To radykalnie odróżnia OCP od standardowego Kubernetes, gdzie Ingress Controller jest często traktowany jak "obcy" dodatek, za którego pełne utrzymanie odpowiada administrator.
 
------
+---
 
 ## Lekcja 4.3: Terminacja TLS – Zarządzanie Bezpieczeństwem na Krawędzi Klastra
 
 Wystawienie aplikacji na świat za pomocą `Route` to tylko połowa sukcesu. W środowiskach produkcyjnych ruch musi być szyfrowany. Obiekt `Route` w OpenShift posiada wbudowane, pierwszorzędne wsparcie dla zarządzania szyfrowaniem (TLS), oferując trzy różne strategie terminacji.[33, 34, 35] "Terminacja TLS" odnosi się do *miejsca* w łańcuchu sieciowym, w którym szyfrowana sesja HTTPS jest "rozpakowywana" (deszyfrowana) i przetwarzana.
 
-### 3.2 Terminacja `Edge` (Najczęstsza)
+### 4.3.1. Terminacja `Edge` (Najczęstsza)
 
 Terminacja typu `Edge` (krawędziowa) jest najczęstszym i najbardziej zrównoważonym podejściem.[22, 36]
 
@@ -232,7 +234,7 @@ spec:
       -----END CERTIFICATE-----
 ```
 
-### 3.3 Terminacja `Passthrough` (Przelotowa)
+### 4.3.2. Terminacja `Passthrough` (Przelotowa)
 
 Terminacja `Passthrough` reprezentuje zupełnie inne podejście.[22, 36]
 
@@ -269,7 +271,7 @@ spec:
     # Brak certyfikatów - router ich nie potrzebuje
 ```
 
-### 3.4 Terminacja `Re-encrypt` (Ponowne Szyfrowanie)
+### 4.3.3. Terminacja `Re-encrypt` (Ponowne Szyfrowanie)
 
 Terminacja `Re-encrypt` zapewnia najbardziej kompleksowe bezpieczeństwo, często wymagane przez standardy zgodności (compliance).[22, 36]
 
@@ -310,7 +312,7 @@ spec:
       -----END CERTIFICATE-----
 ```
 
-### 3.5 Wnioski i Analiza (Sekcja 3)
+### 4.3.4. Wnioski i Analiza (Sekcja 3)
 
 Wybór strategii terminacji TLS to spektrum kompromisów pomiędzy bezpieczeństwem, wydajnością a złożonością operacyjną. Sama obecność opcji `Re-encrypt` jako wbudowanej, pierwszorzędnej funkcji pokazuje, że OpenShift został zaprojektowany z myślą o rygorystycznych wymaganiach korporacyjnych i rządowych, dla których prostota trybu `Edge` jest niewystarczająca.
 
@@ -322,13 +324,13 @@ Wybór strategii terminacji TLS to spektrum kompromisów pomiędzy bezpieczeńst
 | **`Passthrough`** | Na Podzie | **HTTPS** (Szyfrowany) [37] | Tylko na Podzie | mTLS, niestandardowe protokoły [37, 39] |
 | **`Re-encrypt`** | Na Routerze | **HTTPS** (Ponownie szyfrowany) [37] | Router (Cert 1) + Pod (Cert 2) | Wysoka zgodność (PCI, HIPAA), Zero Trust [37] |
 
------
+---
 
 ## Lekcja 4.4: Podstawy NetworkPolicy w Praktyce – Izolacja Podów
 
 Po zabezpieczeniu ruchu "północ-południe" (z zewnątrz do klastra) za pomocą `Route` i TLS, ostatnim filarem jest zabezpieczenie ruchu "wschód-zachód" (wewnątrz klastra) za pomocą `NetworkPolicy`.
 
-### 4.1 Domyślna Polityka Sieciowa OCP: Tryb `multitenant`
+### 4.4.1. Domyślna Polityka Sieciowa OCP: Tryb `multitenant`
 
 Standardowy Kubernetes domyślnie posiada "płaską" sieć. Oznacza to, że każdy Pod w dowolnej przestrzeni nazw (Namespace) może komunikować się z każdym innym Podem w klastrze. Jest to model "allow-all" (zezwalaj na wszystko).
 
@@ -341,7 +343,7 @@ Logika trybu `multitenant` jest prosta, ale potężna [41]:
 
 To domyślne zachowanie `deny-all` między projektami jest fundamentalną cechą bezpieczeństwa OCP. Zapewnia natychmiastową izolację dzierżawców (tenantów) – zespołów lub aplikacji – bez konieczności stosowania jakiejkolwiek dodatkowej konfiguracji.
 
-### 4.2 Ewolucja: Tryb `multitenant` vs. Tryb `networkpolicy`
+### 4.4.2. Ewolucja: Tryb `multitenant` vs. Tryb `networkpolicy`
 
 Tryb `multitenant` był specyficzną, wbudowaną w OCP implementacją (w ramach OpenShift SDN). W miarę dojrzewania ekosystemu Kubernetes, wprowadzono standardowy, natywny obiekt `NetworkPolicy` API (`networking.k8s.io/v1`).[45]
 
@@ -351,7 +353,7 @@ Obserwujemy tu konwergencję standardów. OCP przeszło z własnego, "sztywnego"
 
 Niezależnie od domyślnego trybu, do *segmentacji wewnątrz projektu* (np. izolowania `frontend` od `backend` w tym samym projekcie), administratorzy *zawsze* używają standardowych obiektów `NetworkPolicy` K8s.
 
-### 4.3 Anatomia Obiektu `NetworkPolicy` K8s
+### 4.4.3. Anatomia Obiektu `NetworkPolicy` K8s
 
 Obiekty `NetworkPolicy` działają na zasadzie "Zero Trust" i białej listy (allow-list).[49] Ich logikę definiuje jedna, złota zasada:
 
@@ -364,7 +366,7 @@ Kluczowe pola w specyfikacji `NetworkPolicy`:
   * `ingress`: Definiuje reguły dla ruchu przychodzącego (Kto może łączyć się *DO* tego Poda?).
   * `egress`: Definiuje reguły dla ruchu wychodzącego (Gdzie ten Pod może łączyć się *NA ZEWNĄTRZ*?).
 
-### 4.4 Praktyczny Przykład: Izolacja `frontend` -\> `backend`
+### 4.4.4. Praktyczny Przykład: Izolacja `frontend` -\> `backend`
 
 Rozważmy scenariusz z zapytania: w ramach jednego projektu mamy Pody `frontend` (z etykietą `app: frontend`) oraz Pody `backend` (z etykietą `app: backend`). Chcemy zezwolić na ruch z `frontend` do `backend`, ale zablokować wszelki inny ruch (np. bezpośredni dostęp z `frontend` do `database` lub dostęp z zewnątrz do `backend`).
 
@@ -383,8 +385,8 @@ spec:
   policyTypes:
   - Ingress
   - Egress
-  ingress: # Nie zezwalaj na żaden ruch przychodzący
-  egress:  # Nie zezwalaj na żaden ruch wychodzący
+  ingress: [] # Nie zezwalaj na żaden ruch przychodzący
+  egress: []  # Nie zezwalaj na żaden ruch wychodzący
 ```
 
 *Po zastosowaniu tej polityki, Pody `frontend` i `backend` nie mogą się ze sobą komunikować.*
@@ -443,13 +445,15 @@ spec:
   * `frontend` -\> `database` (Zablokowane przez `frontend-policy` Egress)
   * `inny-pod` -\> `backend` (Zablokowane przez `backend-policy` Ingress)
 
-### 4.5 Wnioski i Analiza (Sekcja 4)
+### 4.4.5. Wnioski i Analiza (Sekcja 4)
 
 Domyślny tryb `multitenant` w OCP [42, 43] był wczesnym, specyficznym dla platformy rozwiązaniem problemu "płaskiej sieci" K8s i kluczowym argumentem sprzedażowym dla przedsiębiorstw wymagających wielodostępności. Przejście OCP na standardowy tryb `networkpolicy` [42, 48] jest sygnałem dojrzałości ekosystemu Kubernetes, który obecnie dostarcza elastycznych narzędzi do realizacji tych samych (i bardziej złożonych) celów bezpieczeństwa.
 
 Wiele zespołów koncentruje się wyłącznie na politykach `ingress` (ochrona serwera). Powyższy przykład pokazuje, że polityki `egress` (kontrola ruchu wychodzącego) są równie krytyczne. Ograniczając, dokąd Pod `frontend` może wysyłać ruch, drastycznie zmniejszamy potencjalny "promień rażenia" (blast radius) w przypadku, gdyby Pod `frontend` został skompromitowany.[52]
 
-## Wnioski Końcowe
+---
+
+## Lekcja 4.5: Wnioski Końcowe
 
 Architektura sieciowa OpenShift stanowi kompletny, wielowarstwowy system obronny (defense-in-depth), który wykracza daleko poza standardowe komponenty Kubernetes. Cztery filary przeanalizowane w tym raporcie – `Service`, `Route`, Terminacja TLS i `NetworkPolicy` – łączą się, tworząc spójny model zarządzania ruchem:
 
@@ -459,7 +463,10 @@ Architektura sieciowa OpenShift stanowi kompletny, wielowarstwowy system obronny
 4.  **`NetworkPolicy`** (wraz z domyślną izolacją międzyprojektową OCP) przenosi filozofię Zero Trust do wnętrza klastra, umożliwiając administratorom rygorystyczną kontrolę ruchu "wschód-zachód" i segmentację aplikacji, co jest kluczowe dla ograniczenia ryzyka w przypadku naruszenia bezpieczeństwa.[52]
 
 Razem, te cztery komponenty pozwalają platformie OpenShift dostarczyć na obietnicę bycia nie tylko "dystrybucją Kubernetes", ale zintegrowaną, bezpieczną domyślnie platformą aplikacyjną klasy korporacyjnej.
-#### **Cytowane prace**
+
+---
+
+## Cytowane prace
 
 1. Services, Load Balancing, and Networking \- Kubernetes, otwierano: listopada 14, 2025, [https://kubernetes.io/docs/concepts/services-networking/](https://kubernetes.io/docs/concepts/services-networking/)  
 2. Connecting Applications with Services \- Kubernetes, otwierano: listopada 14, 2025, [https://kubernetes.io/docs/tutorials/services/connect-applications-service/](https://kubernetes.io/docs/tutorials/services/connect-applications-service/)  

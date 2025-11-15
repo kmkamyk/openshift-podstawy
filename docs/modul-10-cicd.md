@@ -1,6 +1,8 @@
 # Moduł 10: CI/CD – Kompletne Spojrzenie. Raport Architektoniczny
 
-## Wprowadzenie: Ewolucja Automatyzacji w Ekosystemie OpenShift
+---
+
+## Lekcja 10.0: Wprowadzenie: Ewolucja Automatyzacji w Ekosystemie OpenShift
 
 Niniejszy raport stanowi wyczerpującą analizę techniczną współczesnych paradygmatów Continuous Integration (CI) i Continuous Delivery (CD) w ramach platformy Red Hat OpenShift. Struktura tego dokumentu odzwierciedla celową ewolucję metodologii automatyzacji, którą przeszła branża, przechodząc od tradycyjnych, scentralizowanych narzędzi do w pełni deklaratywnych, natywnych dla chmury przepływów pracy.
 
@@ -10,11 +12,13 @@ Kluczowym wnioskiem architektonicznym wynikającym z tej ewolucji jest fundament
 
 Nowoczesny, dojrzały stos CI/CD na OpenShift nie polega na wyborze "Tekton *kontra* ArgoCD". Polega on na strategicznym połączeniu "Tekton *dla CI*" oraz "ArgoCD *dla CD*", co jest tematem przewodnim analizy w Lekcjach 10.4 i 10.5. Ten połączony model rozwiązuje kluczowe wyzwania związane z bezpieczeństwem, skalowalnością i zarządzaniem "dryfem" konfiguracji, które były nieodłączną cechą poprzednich paradygmatów.
 
+---
+
 ## Lekcja 10.1: Metoda "Legacy": Jenkins (Integracja)
 
 Chociaż Jenkins jest często postrzegany jako narzędzie poprzedniej generacji w kontekście Kubernetes, jego wszechobecność sprawiła, że konieczne stało się opracowanie natywnych metod zarządzania nim w OpenShift. Ta lekcja analizuje historyczną i obecną integrację Jenkinsa z platformą, jego mechanizmy komunikacyjne oraz przyczyny, dla których podejście to jest obecnie uznawane za przestarzałe.
 
-### Instalacja i Zarządzanie: Wdrażanie Operatora Jenkins na OpenShift
+### 10.1.1. Instalacja i Zarządzanie: Wdrażanie Operatora Jenkins na OpenShift
 
 Zarządzanie Jenkinsem, aplikacją z natury stanową (przechowującą zadania, historię, pluginy i konfigurację), jest nietrywialnym zadaniem w efemerycznym środowisku Kubernetes. Ręczne zarządzanie `Deployment` i `PersistentVolumeClaim` (PVC) dla Jenkinsa jest podatne na błędy.
 
@@ -27,7 +31,7 @@ W OpenShift instalacja może odbywać się na dwa sposoby:
 
 Adoptowanie Operatora dla Jenkinsa pokazuje, że nawet tradycyjne, monolityczne aplikacje muszą przyjąć natywny dla chmury model zarządzania, aby skutecznie funkcjonować w OpenShift.
 
-### Architektura `BuildConfig`: Strategia `Pipeline` i `Jenkinsfile`
+### 10.1.2. Architektura `BuildConfig`: Strategia `Pipeline` i `Jenkinsfile`
 
 Historycznie, w OpenShift w wersji 3, platforma próbowała stworzyć ujednolicony interfejs API dla wszystkich typów zadań budowania za pomocą zasobu `BuildConfig`.[10] Obok strategii takich jak `Source-to-Image` (S2I) czy `Docker`, istniała strategia `type: JenkinsPipeline`.[11]
 
@@ -37,7 +41,7 @@ To podejście, choć innowacyjne w swoim czasie, okazało się "nieszczelną abs
 
 W rezultacie, strategia `Pipeline` oparta na `BuildConfig` jest **jawnie przestarzała (deprecated)** w OpenShift 4.[10] Oficjalna dokumentacja Red Hat stwierdza, że "równoważna i ulepszona funkcjonalność jest obecna w OpenShift Container Platform Pipelines (Tekton)" [10], kierując użytkowników w stronę prawdziwie natywnego dla chmury rozwiązania.
 
-### Most Komunikacyjny: Integracja Jenkins z API OpenShift
+### 10.1.3. Most Komunikacyjny: Integracja Jenkins z API OpenShift
 
 Kluczowym elementem funkcjonalnym Jenkinsa w OpenShift jest jego zdolność do komunikacji z API klastra. Odbywa się to za pośrednictwem dedykowanej wtyczki "OpenShift Pipeline DSL Plug-in" [13], która jest domyślnie dołączona do oficjalnego obrazu Jenkinsa dostarczanego przez Red Hat.[13]
 
@@ -47,17 +51,19 @@ Aby ta komunikacja była możliwa, Pod Jenkinsa (lub jego dynamiczny agent [16])
 
 Ten model architektoniczny jest klasycznym przykładem **modelu "Push"**.[17] Serwer Jenkins aktywnie *wypycha* zmiany konfiguracyjne do klastra. Stwarza to fundamentalne wyzwanie bezpieczeństwa: serwer CI/CD staje się centralnym punktem o wysokich uprawnieniach. Kompromitacja serwera Jenkins (który często jest wystawiony na zewnątrz w celu odbierania webhooków) może dać atakującemu dostęp administracyjny do całego klastra. Ta słabość architektoniczna jest jednym z głównych powodów, dla których branża migruje w kierunku modelu "Pull" (GitOps), omówionego w Lekcji 10.3.
 
+---
+
 ## Lekcja 10.2: Metoda "Cloud Native": OpenShift Pipelines (Tekton)
 
 W odpowiedzi na ograniczenia modelu "Legacy", społeczność Kubernetes opracowała Tekton jako fundamentalnie nowy, natywny dla chmury silnik CI/CD. W OpenShift, Tekton jest dostarczany jako "OpenShift Pipelines". Ta lekcja bada jego filozofię, architekturę i podstawowe komponenty.
 
-### Instalacja Operatora OpenShift Pipelines
+### 10.2.1. Instalacja Operatora OpenShift Pipelines
 
 Instalacja OpenShift Pipelines odbywa się poprzez OperatorHub i wymaga uprawnień administratora klastra.[18, 19] Administrator wyszukuje "Red Hat OpenShift Pipelines" [19] i zatwierdza instalację.
 
 Kluczowym wyborem podczas instalacji jest "Tryb instalacji". Domyślnie wybrany jest "All namespaces on the cluster (default)".[18, 20] Ten wybór nie jest przypadkowy i odzwierciedla filozofię Tektona. W przeciwieństwie do Jenkinsa, który jest często wdrażany jako instancja na poziomie projektu, Tekton jest fundamentalną *zdolnością* (capability) rozszerzającą klastra. Kontrolery Tekton, instalowane centralnie w przestrzeni nazw `openshift-pipelines` [21], muszą mieć uprawnienia do "obserwowania" (`watch`) zasobów `PipelineRun` i `TaskRun` we *wszystkich* projektach użytkowników. Gdy deweloper tworzy `PipelineRun` w swoim projekcie, centralny kontroler Tekton wykrywa go i uruchamia odpowiednie Pody w projekcie tego dewelopera.
 
-### Filozofia "Bezserwerowego" CI/CD: Architektura Oparta na Podach
+### 10.2.2. Filozofia "Bezserwerowego" CI/CD: Architektura Oparta na Podach
 
 Tekton jest często opisywany jako "bezserwerowy" (serverless) system CI/CD.[2] Ten termin odnosi się do faktu, że nie istnieje centralny, stale działający "serwer Tekton", który trzeba zarządzać, patchować, aktualizować czy backupować (w przeciwieństwie do Jenkinsa). "Serwerem" jest sam kontroler i API Kubernetes.[22]
 
@@ -76,7 +82,7 @@ Ten model ma fundamentalne zalety w porównaniu z architekturą scentralizowaną
   * **Efektywność Zasobów:** Zasoby (CPU, pamięć) są konsumowane tylko wtedy, gdy potok jest faktycznie uruchomiony. Nie ma bezczynnego serwera Jenkinsa zużywającego zasoby.
   * **Współdzielenie w Podzie:** Fakt, że `Steps` działają jako kontenery w jednym Podzie [23], pozwala im na łatwe współdzielenie danych (np. przez wolumen `emptyDir`) oraz komunikację przez `localhost`.
 
-### Kluczowe Komponenty Architektury Tekton
+### 10.2.3. Kluczowe Komponenty Architektury Tekton
 
 Architektura Tektona opiera się na kilku kluczowych `Custom Resource Definitions` (CRD), które działają jak "klocki Lego" do budowania potoków [24, 25, 26]:
 
@@ -89,21 +95,23 @@ Kluczową koncepcją jest **oddzielenie definicji od wykonania**.[2, 25] `Task` 
 
 To oddzielenie jest szczególnie widoczne w przypadku `Workspaces`.[29] `Task` (definicja) mówi tylko: "Potrzebuję katalogu o nazwie `source`, aby przechować sklonowany kod".[30] `PipelineRun` (wykonanie) decyduje, co zostanie tam podmontowane. Może to być `PersistentVolumeClaim` (PVC) [31, 32], `ConfigMap`, `Secret`, a nawet efemeryczny `emptyDir`.[29, 30] Ta elastyczność pozwala na ponowne użycie tego samego `Task` w różnych potokach z różnymi strategiami przechowywania danych.
 
+---
+
 ## Lekcja 10.3: Metoda "GitOps": OpenShift GitOps (ArgoCD)
 
 Podczas gdy Tekton rewolucjonizuje CI (budowanie i testowanie), OpenShift GitOps (oparty na ArgoCD) rewolucjonizuje CD (wdrażanie i zarządzanie). Ta lekcja analizuje filozofię GitOps, jej architekturę "Pull" oraz sposób, w jaki rozwiązuje ona fundamentalny problem "dryfu konfiguracji".
 
-### Instalacja Operatora OpenShift GitOps
+### 10.3.1. Instalacja Operatora OpenShift GitOps
 
 Podobnie jak w przypadku OpenShift Pipelines, instalacja "Red Hat OpenShift GitOps" odbywa się przez OperatorHub.[33, 34] Proces ten jest prosty dla administratora klastra, który wybiera operatora i zatwierdza instalację w trybie "All namespaces".[34] Kluczową zaletą jest to, że Operator nie tylko instaluje kontrolery, ale także automatycznie wdraża w pełni funkcjonalną instancję ArgoCD w dedykowanej przestrzeni nazw `openshift-gitops`.[34, 35] Zapewnia to natychmiastowy dostęp do interfejsu użytkownika i API ArgoCD bez dodatkowej konfiguracji.
 
-### Paradygmat GitOps: Git jako Jedyne Źródło Prawdy
+### 10.3.2. Paradygmat GitOps: Git jako Jedyne Źródło Prawdy
 
 GitOps to praktyka operacyjna, która przyjmuje Git jako *jedyne źródło prawdy* (Single Source of Truth) dla pożądanego stanu systemu.[36, 37, 38] W tym modelu cała infrastruktura i konfiguracja aplikacji są zdefiniowane *deklaratywnie* (np. w postaci plików YAML Kubernetes) i przechowywane w repozytorium Git.[39]
 
 GitOps to jednak coś więcej niż tylko Infrastructure as Code (IaC).[37] Podczas gdy IaC (np. skrypt `oc apply -f...` uruchamiany przez Jenkinsa) jest częścią GitOps, prawdziwa różnica polega na dodaniu **aktywnej pętli uzgadniania**.[39, 40] W modelu GitOps, agent (ArgoCD) działający na klastrze *stale* porównuje stan rzeczywisty klastra ze stanem pożądanym zadeklarowanym w Git.[39] Wszystkie zmiany w systemie, w tym aktualizacje i rollbacki, są wprowadzane wyłącznie poprzez commity i Pull Requesty w Git.[36]
 
-### Model "Pull" (ArgoCD) vs Model "Push" (Jenkins/Tekton)
+### 10.3.3. Model "Pull" (ArgoCD) vs Model "Push" (Jenkins/Tekton)
 
 Architektura GitOps opiera się na **modelu "Pull" (ściągania)**, co stanowi fundamentalną zmianę w stosunku do tradycyjnego modelu "Push" (wypychania) używanego przez Jenkinsa czy Tektona.[17]
 
@@ -124,7 +132,7 @@ Poniższa tabela szczegółowo porównuje te dwa modele operacyjne.
 | **Wymagane Uprawnienia (Agent CD)** | Nie dotyczy. | Wysokie (agent w klastrze potrzebuje uprawnień do zarządzania zasobami, ale są one ograniczone do *wewnątrz* klastra). |
 | **Wykrywanie Dryfu** | Brak (model "fire-and-forget"). | Podstawowa funkcja (ciągłe monitorowanie).[41] |
 
-### Wykrywanie i Zarządzanie "Dryfem" Konfiguracji
+### 10.3.4. Wykrywanie i Zarządzanie "Dryfem" Konfiguracji
 
 Kluczową wartością ArgoCD jest rozwiązanie problemu **"dryfu" (drift) konfiguracji**.[42] Dryf ma miejsce, gdy stan rzeczywisty zasobów na klastrze różni się od stanu zdefiniowanego w Git.[41] Jest to niemal zawsze wynikiem ręcznych, nieśledzonych zmian (np. inżynier wykonujący `kubectl edit deployment...` w celu szybkiej naprawy na produkcji).[41]
 
@@ -137,17 +145,19 @@ ArgoCD oferuje dwie strategie radzenia sobie z dryfem:
 
 Chociaż `selfHeal` może wydawać się restrykcyjny, wymusza on fundamentalną dyscyplinę organizacyjną. Zmusza zespoły do porzucenia ręcznych interwencji na rzecz dokonywania *wszystkich* zmian poprzez proces Git (Pull Request, recenzja, merge), co tworzy doskonały, audytowalny ślad każdej zmiany w systemie.[39, 41]
 
+---
+
 ## Lekcja 10.4: Testowanie Aplikacji w Pipeline (Tekton)
 
 Po ustanowieniu Tektona jako natywnego silnika CI, kolejnym krokiem jest integracja krytycznych procesów walidacji, takich jak testy jednostkowe i integracyjne. W Tektonie testowanie nie jest specjalną funkcją, ale po prostu kolejnym `Task` w potoku.
 
-### Testy jako `Task`: Integracja Testów w Potoku Tekton
+### 10.4.1. Testy jako `Task`: Integracja Testów w Potoku Tekton
 
-W typowym potoku CI (Clone -\> Test -\> Build), `Task` testujący jest umieszczany po sklonowaniu kodu, a przed budowaniem obrazu kontenerowego.[46] Kluczowym elementem umożliwiającym ten przepływ są `Workspaces`.[31]
+W typowym potoku CI (Clone -> Test -> Build), `Task` testujący jest umieszczany po sklonowaniu kodu, a przed budowaniem obrazu kontenerowego.[46] Kluczowym elementem umożliwiającym ten przepływ są `Workspaces`.[31]
 
 Potok (`Pipeline`) definiuje `Workspace` (np. o nazwie `shared-data`), który jest wspierany przez `PersistentVolumeClaim` (PVC).[32] Ten sam `Workspace` jest następnie przekazywany zarówno do `Task` `git-clone`, jak i do `Task` `run-tests`. `Task` `git-clone` zapisuje kod źródłowy w `Workspace`. `Task` `run-tests` odczytuje ten kod z tego samego `Workspace` i wykonuje na nim testy.[31]
 
-### Implementacja Testów: Przykłady YAML
+### 10.4.2. Implementacja Testów: Przykłady YAML
 
 Definicja `Task` testującego zależy od stosu technologicznego projektu.
 
@@ -156,8 +166,6 @@ Tworzony jest `Task`, który używa obrazu bazowego Pythona, np. `image: python:
 
 1.  Instalacja zależności: `pip install -r requirements.txt`.[47]
 2.  Uruchomienie testów: `pytest` lub (jak w przykładzie) `nosetests`.[23, 48]
-
-<!-- end list -->
 
 ```yaml
 # Przykład Task dla pytest/nosetests [23]
@@ -202,7 +210,7 @@ tasks:
 
 Ważną optymalizacją dla `maven` jest dodanie drugiego `Workspace` (np. `maven-repo-cache`) wspieranego przez PVC i podmontowanego do `/root/.m2`. Pozwala to na buforowanie pobranych zależności Maven między uruchomieniami potoku, drastycznie skracając czas budowania.[52]
 
-### Obsługa Błędów i Zatrzymanie Potoku
+### 10.4.3. Obsługa Błędów i Zatrzymanie Potoku
 
 Domyślne zachowanie Tektona jest idealne dla CI: działa na zasadzie **"fail-fast"**.[53]
 
@@ -216,11 +224,13 @@ To domyślne zachowanie jest dokładnie tym, czego oczekuje się od procesu CI �
 
 W przypadkach, gdy wymagane jest wykonanie pewnych kroków *zawsze*, niezależnie od powodzenia lub porażki (np. wysłanie powiadomienia na Slack, usunięcie tymczasowej bazy danych testowej), Tekton dostarcza klauzulę `finally`.[55] `Task` zdefiniowane w sekcji `finally` potoku zostaną wykonane po zakończeniu wszystkich innych `Task`, gwarantując wykonanie kroków sprzątających.[56]
 
+---
+
 ## Lekcja 10.5: Warsztat End-to-End: Rollback i Strategia Canary z ArgoCD
 
 Ta lekcja syntetyzuje koncepcje GitOps (Lekcja 10.3) i CI (Lekcja 10.4), aby zbudować kompletny, odporny na błędy przepływ pracy, który obejmuje zaawansowane strategie wdrażania i mechanizmy rollback.
 
-### Konfiguracja Aplikacji ArgoCD: Śledzenie Repozytorium Git
+### 10.5.1. Konfiguracja Aplikacji ArgoCD: Śledzenie Repozytorium Git
 
 Sercem zarządzania aplikacją w ArgoCD jest zasób `kind: Application`.[44] Ten pojedynczy manifest YAML jest deklaratywną definicją, która łączy repozytorium Git z docelowym środowiskiem na klastrze.
 
@@ -238,7 +248,7 @@ ArgoCD może być również skonfigurowane do łączenia się z prywatnymi repoz
 
 Kluczową decyzją architektoniczną jest `targetRevision`.[59] Ustawienie `HEAD` [44] (lub nazwy głównej gałęzi) oznacza "zawsze wdrażaj najnowszą wersję" – typowe dla środowisk deweloperskich. Ustawienie statycznego tagu (np. `v1.2.0`) oznacza "przypnij to środowisko do tej konkretnej wersji" – kluczowe dla stabilności środowisk produkcyjnych.
 
-### Automatyczne Wdrożenie po Zmianie w Git
+### 10.5.2. Automatyczne Wdrożenie po Zmianie w Git
 
 Połączenie potoku CI (Tekton) z potokiem CD (ArgoCD) tworzy kompletny przepływ pracy [60]:
 
@@ -255,7 +265,7 @@ Zdecydowanie najlepszą praktyką jest utrzymywanie dwóch oddzielnych repozytor
 
 Alternatywą dla kroku 5 i 6 jest `ArgoCD Image Updater`.[62] Jest to narzędzie, które monitoruje *rejestr obrazów*. Gdy wykryje nowy tag, automatycznie wykonuje commit i push do repozytorium `app-config`, zwalniając potok CI z tej odpowiedzialności.[62]
 
-### Strategie Rollback w GitOps
+### 10.5.3. Strategie Rollback w GitOps
 
 W modelu GitOps, gdzie Git jest źródłem prawdy [63], istnieją dwa różne podejścia do wycofywania zmian, o drastycznie różnych implikacjach:
 
@@ -264,7 +274,7 @@ W modelu GitOps, gdzie Git jest źródłem prawdy [63], istnieją dwa różne po
 2.  **Rollback Awaryjny (oparty na UI/CLI): `argocd app rollback`**
     ArgoCD UI/CLI dostarcza polecenie `rollback`.[63, 64] To polecenie mówi ArgoCD: "Natychmiast zignoruj Git i wdróż poprzednią, znaną-dobrą konfigurację, którą masz w swojej historii". Jest to *przycisk awaryjny* do natychmiastowej naprawy produkcji. Jednak po jego użyciu stan klastra (naprawiony) *różni się* od stanu w Git (nadal zepsuty). ArgoCD natychmiast zgłosi stan `OutOfSync`.[65] Jest to sygnał dla zespołu: "Produkcja jest tymczasowo stabilna, ale teraz musicie naprawić stan w Git (np. poprzez `git revert`)".
 
-### Wprowadzenie do `Argo Rollouts`: Zaawansowane Wdrożenia Progresywne
+### 10.5.4. Wprowadzenie do `Argo Rollouts`: Zaawansowane Wdrożenia Progresywne
 
 Standardowa strategia wdrażania Kubernetes, `RollingUpdate`, jest często niewystarczająca dla krytycznych aplikacji. Ma ona ograniczoną kontrolę nad prędkością, nie zarządza aktywnie ruchem, nie wykonuje analizy metryk i nie potrafi automatycznie wycofać wdrożenia w przypadku problemów.[66]
 
@@ -275,7 +285,7 @@ Kluczowe jest zrozumienie podziału ról:
   * **ArgoCD (GitOps Engine):** Odpowiada za to, *co* jest na klastrze. Jego zadaniem jest wykrycie zmiany w `kind: Rollout` w Git i zastosowanie (`apply`) tej zmiany na klastrze.
   * **Argo Rollouts (Deployment Engine):** Odpowiada za to, *jak* ta zmiana jest wdrażana. Kontroler `Argo Rollouts` "widzi" zmianę w zasobie `Rollout` i przejmuje proces, inteligentnie zarządzając starymi i nowymi `ReplicaSet` oraz manipulując ruchem.[67]
 
-### Analiza Strategii Canary (Wdrożenie Kanarkowe)
+### 10.5.5. Analiza Strategii Canary (Wdrożenie Kanarkowe)
 
 Strategia Canary (kanarkowa) polega na stopniowym wprowadzaniu nowej wersji aplikacji dla małego podzbioru użytkowników, co ogranicza "promień rażenia" (blast radius) ewentualnego błędu.[69, 70]
 
@@ -300,7 +310,9 @@ Poniższa tabela podsumowuje kluczowe strategie wdrażania dostępne w OpenShift
 | **Blue-Green** (Argo Rollouts) [68] | Wdraża pełną nową wersję ("Green") obok starej ("Blue").[68] | Natychmiastowe przełączenie ruchu 0% -\> 100%.[68] | Niski. Natychmiastowy rollback przez przełączenie ruchu. | Szybki (po wdrożeniu "Green"). | Wysoki (2x zasobów).[68] |
 | **Canary** (Argo Rollouts) [68] | Stopniowe wdrażanie nowej wersji i stopniowe przesuwanie ruchu.[69] | Precyzyjna kontrola (np. 10% -\> 50% -\> 100%).[70, 71] | Najniższy. Wpływa tylko na mały % użytkowników.[69] | Wolny (celowo wstrzymywany).[70] | Średni (stopniowo skaluje w górę i w dół). |
 
-## Podsumowanie i Rekomendacje Architektoniczne
+---
+
+## Lekcja 10.6: Podsumowanie i Rekomendacje Architektoniczne
 
 Analiza trzech paradygmatów CI/CD w OpenShift – "Legacy" (Jenkins), "Cloud-Native" (Tekton) i "GitOps" (ArgoCD) – ujawnia klarowną ścieżkę ewolucyjną w kierunku bardziej bezpiecznego, skalowalnego i deklaratywnego modelu automatyzacji. Zamiast traktować te narzędzia jako konkurencyjne, architekci platform powinni postrzegać je jako komplementarne komponenty "złotego standardu" nowoczesnego potoku.
 
@@ -319,7 +331,10 @@ Rekomendowana architektura "Złotego Standardu" CI/CD na OpenShift łączy mocne
 5.  **Pełen Przepływ:** Zmiana w `app-config-repo` (dokonana przez Tektona) jest wykrywana przez ArgoCD. ArgoCD stosuje (`apply`) zaktualizowany manifest `Rollout` na klastrze. Kontroler `Argo Rollouts` [68] przejmuje kontrolę, wykrywa zmianę i rozpoczyna bezpieczne, stopniowe wdrożenie Canary [70], potencjalnie weryfikując je automatycznie za pomocą metryk Prometheus.[72]
 
 Ta połączona architektura (Tekton + ArgoCD + Argo Rollouts) w pełni realizuje obietnicę natywnego dla chmury CI/CD. Tworzy ona bezpieczną separację między procesami CI i CD, egzekwuje Git jako jedyne źródło prawdy dla operacji oraz zastępuje ryzykowne wdrożenia "big bang" kontrolowanymi, progresywnymi rolloutami.
-#### **Cytowane prace**
+
+---
+
+## Cytowane prace
 
 1. Argo CD vs Jenkins: 5 Key Differences and Using Them Together | Codefresh, otwierano: listopada 15, 2025, [https://codefresh.io/learn/argo-cd/argo-cd-vs-jenkins-5-key-differences-and-using-them-together/](https://codefresh.io/learn/argo-cd/argo-cd-vs-jenkins-5-key-differences-and-using-them-together/)  
 2. Chapter 3\. Understanding OpenShift Pipelines \- Red Hat Documentation, otwierano: listopada 15, 2025, [https://docs.redhat.com/en/documentation/red\_hat\_openshift\_pipelines/1.12/html/about\_openshift\_pipelines/understanding-openshift-pipelines](https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.12/html/about_openshift_pipelines/understanding-openshift-pipelines)  

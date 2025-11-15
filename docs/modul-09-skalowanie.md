@@ -1,6 +1,8 @@
-# Moduł 9: Zaawansowane Zarządzanie i Skalowanie Aplikacji w Środowiskach Kubernetes: Dogłębna Analiza 
+# Moduł 9: Zaawansowane Zarządzanie i Skalowanie Aplikacji w Środowiskach Kubernetes: Dogłębna Analiza
 
-## Wprowadzenie do Architektury Zarządzania Aplikacjami
+---
+
+## Lekcja 9.0: Wprowadzenie do Architektury Zarządzania Aplikacjami
 
 Wdrożenie aplikacji w klastrze Kubernetes lub OpenShift jest zaledwie pierwszym etapem jej cyklu życia. Prawdziwa inżynieria systemów natywnych dla chmury rozpoczyna się po wdrożeniu i koncentruje na zapewnieniu odporności, elastyczności oraz efektywności. Zaawansowane zarządzanie aplikacjami opiera się na trzech fundamentalnych filarach, które zostaną szczegółowo przeanalizowane w niniejszym raporcie:
 
@@ -10,9 +12,11 @@ Wdrożenie aplikacji w klastrze Kubernetes lub OpenShift jest zaledwie pierwszym
 
 Niniejszy raport wykaże, że te trzy lekcje nie są izolowanymi tematami, lecz stanowią głęboko powiązany, cykliczny system sterowania (feedback control loop) niezbędny do autonomicznego zarządzania aplikacjami. Lekcja 9.3 (`ResourceQuota` i `LimitRange`) ustanawia fundamentalne "prawa fizyki" klastra, definiując gwarancje zasobów (`requests`) oraz limity budżetowe. Lekcja 9.2 (HPA) jest bezpośrednio zależna od tych reguł; oblicza ona bowiem procentowe wykorzystanie zasobów w stosunku do zadeklarowanych `requests` i bez nich nie może funkcjonować. Wreszcie, Lekcja 9.1 (Sondy) działa jako kluczowy stabilizator dla procesów skalowania inicjowanych przez Lekcję 9.2. Kiedy HPA tworzy nowe Pody, to `readinessProbe` zapewnia, że nie otrzymają one ruchu przedwcześnie, co zapobiega błędom i zapewnia płynność działania podczas dynamicznego skalowania. Zrozumienie tej współzależności jest kluczowe dla projektowania niezawodnych systemów na dużą skalę.
 
+---
+
 ## Lekcja 9.1: Zapewnienie Kondycji i Gotowości Aplikacji za pomocą Sond (Probes)
 
-### Fundamentalne Cele Sond: "Życie" vs. "Gotowość"
+### 9.1.1. Fundamentalne Cele Sond: "Życie" vs. "Gotowość"
 
 W ekosystemie Kubernetes, sam fakt, że proces kontenera jest uruchomiony, nie jest wystarczającą informacją o stanie aplikacji. Aplikacja może być uruchomiona, ale zawieszona, lub może być w trakcie uruchamiania i jeszcze niegotowa do przyjmiania żądań. Aby umożliwić systemowi orkiestracji (poprzez agenta `kubelet` na węźle) wgląd w wewnętrzny stan kontenera, stosuje się sondy (Probes).
 
@@ -23,16 +27,15 @@ Koncepcja sond opiera się na rozróżnieniu dwóch kluczowych pytań:
 
 Rozróżnienie to jest fundamentalne dla stabilności systemu. Jeśli aplikacja jest przeciążona i wolno odpowiada, jej sonda gotowości może zawieść, co jest pożądane (system przestanie wysyłać do niej nowy ruch). Gdyby jednak w tej samej sytuacji skonfigurowano only sondę żywotności, która by zawiodła, system niepotrzebnie zrestartowałby przeciążony, ale wciąż działający kontener, potencjalnie wywołując kaskadową awarię.
 
-### Analiza `livenessProbe` (Sonda Żywotności)
+### 9.1.2. Analiza `livenessProbe` (Sonda Żywotności)
 
 Sonda żywotności (`livenessProbe`) jest głównym mechanizmem samonaprawczym (self-healing) w Kubernetes. Jej celem jest wykrywanie i reagowanie na stany, w których aplikacja jest technicznie uruchomiona, ale nie jest w stanie "robić postępów" (`unable to make progress`). Klasycznym przykładem jest zakleszczenie (deadlock) w aplikacji wielowątkowej, gdzie proces istnieje, ale jest całkowicie zablokowany.
 
 Mechanizm działania polega na okresowym wykonywaniu testu przez `kubelet`. Jeśli sonda zawiedzie wielokrotnie (liczba prób jest definiowana przez parametr `failureThreshold`), `kubelet` uznaje kontener za "martwy". Podejmuje wówczas drastyczną, ale konieczną akcję: zabija kontener, a następnie restartuje go zgodnie z polityką restartu Poda (`restartPolicy`).
 
-Pomimo swojej użyteczności, `livenessProbe` jest narzędziem, którego niewłaściwa konfiguracja jest częstą przyczyną kaskadowych awarii, zwłaszcza w przypadku aplikacji o długim czasie uruchamiania. Rozważmy scenariusz opisany w: aplikacja potrzebuje 20 sekund na pełne uruchomienie i rozpoczęcie odpowiadania na żądania. Administrator ustawia `livenessProbe` z domyślnym `timeoutSeconds` (1 sekunda) i krótkim `initialDelaySeconds` (np. 10 sekund). Sonda uruchamia się po 10 sekundach, ale aplikacja jeszcze nie odpowiada. Sonda przekracza limit czasu (1s) i zawodzi. Po kilku kolejnych nieudanych próbach (zgodnie z `periodSeconds` i `failureThreshold`), `kubelet` decy
-uje, że aplikacja jest martwa i ją restartuje, zanim zdążyła ona w ogóle wystartować. Pod wpada w pętlę restartów, znaną jako `CrashLoopBackOff`. Z tego powodu `livenessProbe` nigdy nie powinna być zależna od czynników inicjalizacyjnych; do tego celu służy `startupProbe`.
+Pomimo swojej użyteczności, `livenessProbe` jest narzędziem, którego niewłaściwa konfiguracja jest częstą przyczyną kaskadowych awarii, zwłaszcza w przypadku aplikacji o długim czasie uruchamiania. Rozważmy scenariusz opisany w: aplikacja potrzebuje 20 sekund na pełne uruchomienie i rozpoczęcie odpowiadania na żądania. Administrator ustawia `livenessProbe` z domyślnym `timeoutSeconds` (1 sekunda) i krótkim `initialDelaySeconds` (np. 10 sekund). Sonda uruchamia się po 10 sekundach, ale aplikacja jeszcze nie odpowiada. Sonda przekracza limit czasu (1s) i zawodzi. Po kilku kolejnych nieudanych próbach (zgodnie z `periodSeconds` i `failureThreshold`), `kubelet` decyduje, że aplikacja jest martwa i ją restartuje, zanim zdążyła ona w ogóle wystartować. Pod wpada w pętlę restartów, znaną jako `CrashLoopBackOff`. Z tego powodu `livenessProbe` nigdy nie powinna być zależna od czynników inicjalizacyjnych; do tego celu służy `startupProbe`.
 
-### Analiza `readinessProbe` (Sonda Gotowości)
+### 9.1.3. Analiza `readinessProbe` (Sonda Gotowości)
 
 Sonda gotowości (`readinessProbe`) odpowiada na inne pytanie: czy kontener jest gotowy do przyjmowania ruchu. Jest to kluczowe dla procesów takich jak wdrożenia (rolling updates) oraz skalowanie, ponieważ pozwala uniknąć wysyłania żądań do Poda, który wciąż się ładuje, np. kompiluje JIT, łączy się z bazą danych lub "rozgrzewa" lokalne pamięci podręczne (caches).
 
@@ -40,7 +43,7 @@ Kiedy `readinessProbe` zawodzi, `kubelet` *nie restartuje* kontenera. Zamiast te
 
 Powszechnym błędem jest myślenie, że `readinessProbe` jest istotna tylko podczas startu Poda. W rzeczywistości, jak potwierdzają źródła, sonda gotowości działa przez cały cykl życia Poda. Jest to kluczowy mechanizm zapewniania odporności. Wyobraźmy sobie aplikację, która tymczasowo traci połączenie z bazą danych lub jest chwilowo przeciążona i nie jest w stanie przyjąć więcej połączeń. Jej `livenessProbe` (która może sprawdzać tylko, czy proces aplikacji istnieje) nadal będzie przechodzić pomyślnie. Jednak `readinessProbe`, która może próbować wykonać proste zapytanie (np. `SELECT 1`), zawiedzie. Kubernetes elegancko wycofa Poda z load balancera, dając mu czas na odzyskanie połączenia lub zasobów. Gdy tylko `readinessProbe` znów zacznie przechodzić pomyślnie, Pod jest automatycznie dodawany z powrotem do puli i zaczyna ponownie obsługiwać ruch.
 
-### Analiza `startupProbe` (Sonda Startowa)
+### 9.1.4. Analiza `startupProbe` (Sonda Startowa)
 
 Sonda startowa (`startupProbe`) została wprowadzona, aby formalnie rozwiązać problem `CrashLoopBackOff` opisany w analizie `livenessProbe`. Jest ona zaprojektowana specjalnie dla wolno startujących aplikacji, takich jak monolityczne aplikacje Java lub aplikacje wymagające skomplikowanej inicjalizacji.
 
@@ -56,7 +59,7 @@ Kolejność egzekucji sond jest kluczowa dla stabilności Poda:
 
 Ta sekwencja gwarantuje, że wolno startująca aplikacja nie zostanie przedwcześnie zabita przez zbyt agresywną sondę żywotności.
 
-### Implementacja i Konfiguracja Sond
+### 9.1.5. Implementacja i Konfiguracja Sond
 
 Sondy mogą być realizowane za pomocą trzech różnych mechanizmów (handlerów):
 
@@ -80,9 +83,11 @@ Konfiguracja każdej sondy jest kontrolowana przez zestaw precyzyjnych parametr�
 
 Domyślne wartości dla `livenessProbe` (`periodSeconds: 10`, `failureThreshold: 3`, `timeoutSeconds: 1`) oznaczają, że system potrzebuje od 21 do 30 sekund, aby zareagować na trwałą awarię aplikacji. Parametry te muszą być starannie dostosowane do charakterystyki i wymagań danej aplikacji.
 
+---
+
 ## Lekcja 9.2: Automatyzacja Skalowania Horyzontalnego za pomocą `HorizontalPodAutoscaler` (HPA)
 
-### Architektura Autoskalowania w Kubernetes
+### 9.2.1. Architektura Autoskalowania w Kubernetes
 
 `HorizontalPodAutoscaler` (HPA) to zasób Kubernetes, który automatycznie aktualizuje zasoby robocze (takie jak `Deployment` lub `StatefulSet`), aby dynamicznie skalować liczbę replik Podów w odpowiedzi na zmieniające się zapotrzebowanie. Jest to fundamentalny mechanizm zapewniania elastyczności aplikacji.
 
@@ -96,7 +101,7 @@ HPA i VPA generalnie nie mogą być używane jednocześnie dla tego samego zesta
 
 Jednocześnie HPA jest w pełni skuteczny tylko wtedy, gdy działa w synergii z Cluster Autoscaler (CA). HPA (działający na poziomie Podów) może zdecydować o dodaniu dziesięciu nowych replik. Jeśli jednak klaster (na poziomie węzłów) nie ma wolnej pojemności, te dziesięć Podów utknie na stałe w stanie `Pending`. W tym momencie do akcji wkracza Cluster Autoscaler (CA), który monitoruje Pody w stanie `Pending` i, jeśli polityka na to pozwala, automatycznie dodaje nowe węzły do klastra, aby pomieścić nowe Pody.
 
-### Mechanika Pętli Kontrolnej HPA
+### 9.2.2. Mechanika Pętli Kontrolnej HPA
 
 HPA jest implementowany jako pętla sterowania (control loop) w ramach `kube-controller-manager`. Domyślnie, co 15 sekund (konfigurowalne za pomocą flagi `--horizontal-pod-autoscaler-sync-period`), kontroler HPA wykonuje następujące kroki:
 
@@ -106,7 +111,7 @@ HPA jest implementowany jako pętla sterowania (control loop) w ramach `kube-con
 4.  Jeśli pożądana liczba różni się od aktualnej (z uwzględnieniem progów i okresów stabilizacji), HPA aktualizuje pole `replicas` w obiekcie nadrzędnym (np. `Deployment`).
 5.  `Deployment` (a właściwie jego `ReplicaSet`) reaguje na tę zmianę, tworząc lub usuwając Pody.
 
-### Fundamentalna Rola Potoku Metryk
+### 9.2.3. Fundamentalna Rola Potoku Metryk
 
 HPA jest całkowicie zależny od dostępności metryk. Domyślnie, do skalowania na podstawie CPU i pamięci, HPA wymaga komponentu klastra o nazwie `Metrics Server`.
 
@@ -123,12 +128,12 @@ W tym miejscu ujawnia się kluczowe powiązanie między Lekcją 9.2 (HPA) a Lekc
 Przykład:
 
   * Pod ma zdefiniowane `spec.containers.resources.requests.cpu: 500m`.
-  * HPA z celem 80% będzie próbował utrzymać średnie użycie CPU na poziomie $500m \times 0.8 = 400m$.
-  * Jeśli średnie użycie wzrośnie do 500m (100% `request`), HPA obliczy, że potrzebuje $100\% / 80\% = 1.25$ raza więcej replik.
+  * HPA z celem 80% będzie próbował utrzymać średnie użycie CPU na poziomie 500m * 0.8 = 400m.
+  * Jeśli średnie użycie wzrośnie do 500m (100% `request`), HPA obliczy, że potrzebuje 100% / 80% = 1.25 raza więcej replik.
 
 Jak słusznie zauważono w i, bez zdefiniowanych `requests` dla zasobów (CPU lub pamięci), HPA nie jest w stanie obliczyć procentowego wykorzystania i *nie będzie działać* dla metryk zasobowych. Dlatego Lekcja 9.3 (szczególnie `LimitRange` zapewniający domyślne `requests`) jest twardym warunkiem wstępnym dla działania Lekcji 9.2.
 
-### Zaawansowane Skalowanie Oparte na Metrykach Niestandardowych i Zewnętrznych
+### 9.2.4. Zaawansowane Skalowanie Oparte na Metrykach Niestandardowych i Zewnętrznych
 
 Skalowanie oparte na CPU jest często niewystarczające. Prawdziwym wąskim gardłem aplikacji może być liczba żądań na sekundę lub długość kolejki komunikatów (np. w RabbitMQ lub SQS). W takich przypadkach HPA, używając API w wersji `autoscaling/v2`, może skalować się w oparciu o:
 
@@ -139,7 +144,7 @@ Te API nie są dostarczane domyślnie. Muszą być zaimplementowane przez "adapt
 
 Adapter ten działa jak tłumacz między HPA a systemem monitoringu Prometheus. System Prometheus zbiera szczegółowe metryki przy użyciu własnego mechanizmu zapytań PromQL. HPA nie rozumie PromQL; oczekuje prostego zapytania o wartość metryki. Administrator konfiguruje `Prometheus Adapter` (zazwyczaj poprzez `values.yaml` podczas instalacji Helm), definiując `rules`. Taka reguła mapuje prostą nazwę metryki dostępną dla HPA (np. `nginx_requests_per_second`) na złożone zapytanie PromQL, które faktycznie oblicza tę wartość (np. `sum(rate(http_requests_total{app="nginx"}[2m]))`).
 
-### Implementacja Praktyczna (OpenShift/Kubernetes)
+### 9.2.5. Implementacja Praktyczna (OpenShift/Kubernetes)
 
 HPA można utworzyć na dwa sposoby:
 
@@ -168,9 +173,11 @@ HPA można utworzyć na dwa sposoby:
       targetCPUUtilizationPercentage: 60
     ```
 
+---
+
 ## Lekcja 9.3: Zarządzanie Zasobami: `ResourceQuota` i `LimitRange`
 
-### Fundamenty: `requests` vs. `limits`
+### 9.3.1. Fundamenty: `requests` vs. `limits`
 
 Zanim przejdziemy do polityk na poziomie przestrzeni nazw, musimy zdefiniować podstawowe jednostki zarządzania zasobami na poziomie kontenera: `requests` (żądania) i `limits` (limity).
 
@@ -189,7 +196,7 @@ Kombinacja `requests` i `limits` ma kluczowy, choć nieoczywisty wpływ na stabi
 2.  **`Burstable` (Elastyczna):** Pod otrzymuje tę klasę, jeśli ma zdefiniowane `requests` i `limits`, ale nie są one równe (zazwyczaj `requests < limits`), lub gdy przynajmniej jeden kontener ma zdefiniowany przynajmniej jeden `request`. Pody te mogą "burstować" i zużywać więcej zasobów (aż do `limits`), jeśli są one wolne na węźle.
 3.  **`BestEffort` (Najlepsza Dostępna):** Pod otrzymuje tę klasę, jeśli nie ma zdefiniowanych *żadnych* `requests` ani `limits`. Pody te są pierwszymi kandydatami do eksmisji (zabicia) przez `kubelet`, gdy na węźle zaczyna brakować zasobów.
 
-### Analiza `ResourceQuota`: Budżet na Poziomie Projektu/Przestrzeni Nazw
+### 9.3.2. Analiza `ResourceQuota`: Budżet na Poziomie Projektu/Przestrzeni Nazw
 
 `ResourceQuota` jest kluczowym narzędziem administracyjnym w środowiskach współdzielonych (multi-tenant). Jej celem jest adresowanie obawy, że "jeden zespół lub projekt mógłby użyć więcej niż swoją sprawiedliwą część zasobów", potencjalnie destabilizując cały klaster.
 
@@ -203,7 +210,7 @@ Obiekt `ResourceQuota` definiuje ograniczenia na *agregatowe* (sumaryczne) zuży
 
 Quota jest egzekwowana na etapie "admission control". Gdy użytkownik próbuje utworzyć nowy obiekt (np. Poda), system sprawdza, czy suma zasobów (w tym nowego Poda) przekroczyłaby zdefiniowany limit `hard`. Jeśli tak, żądanie jest odrzucane ze statusem HTTP 403 Forbidden i komunikatem wyjaśniającym, który limit zostałby naruszony.
 
-### Analiza `LimitRange`: Domyślne Wartości i Ograniczenia dla Poszczególnych Podów
+### 9.3.3. Analiza `LimitRange`: Domyślne Wartości i Ograniczenia dla Poszczególnych Podów
 
 `LimitRange` również działa na poziomie przestrzeni nazw, jednak w przeciwieństwie do `ResourceQuota`, nie dotyczy sumarycznego zużycia. Zamiast tego `LimitRange` egzekwuje politykę na *poszczególnych* obiektach (takich jak Pod, Kontener lub PVC) w momencie ich tworzenia.
 
@@ -233,23 +240,25 @@ W ten sposób `ResourceQuota` ustawia budżet, a `LimitRange` zapewnia, że Pody
 | **Działanie (Admission)** | Odrzuca (Rejects), jeśli *suma* zasobów przekroczy limit. | Mutuje (Mutates) dodając domyślne LUB Waliduje (Validates) min/max. |
 | **Przykład Polityki** | "Zespół A nie może użyć więcej niż 10 CPU łącznie". | "Każdy kontener w zespole A domyślnie dostaje 100m CPU i nie może prosić o więcej niż 2 CPU". |
 
-## Synteza: Kompletny Model Zarządzania Cyklem Życia Aplikacji
+---
+
+## Lekcja 9.4: Synteza: Kompletny Model Zarządzania Cyklem Życia Aplikacji
 
 Trzy przeanalizowane lekcje łączą się w jeden, spójny i holistyczny przepływ pracy, który definiuje autonomiczne zarządzanie aplikacją w Kubernetes. Rozważmy pełny scenariusz end-to-end:
 
-**Faza 0: Konfiguracja Platformy (Lekcja 9.3)**
+### 9.4.1. Faza 0: Konfiguracja Platformy (Lekcja 9.3)
 Administrator klastra tworzy przestrzeń nazw "production-team-a" dla nowego zespołu.
 
 1.  Aby kontrolować koszty i zapewnić sprawiedliwy podział, administrator tworzy `ResourceQuota`, ograniczając zespół do sumarycznego użycia 50 CPU, 250Gi RAM i 10 wolumenów PVC.
 2.  Aby ułatwić pracę deweloperom i zapewnić zgodność z HPA (jak zobaczymy za chwilę), administrator tworzy `LimitRange`, który (a) ustawia `defaultRequest: { cpu: 200m }` dla wszystkich kontenerów oraz (b) wymusza `max: { cpu: 2 }`, aby zapobiec tworzeniu "potworów".
 
-**Faza 1: Wdrożenie Aplikacji (Lekcja 9.3 + 9.1)**
+### 9.4.2. Faza 1: Wdrożenie Aplikacji (Lekcja 9.3 + 9.1)
 Deweloper wdraża swoją aplikację (jako `Deployment`), definiując w niej sondy (`startupProbe`, `readinessProbe`, `livenessProbe`), ale zapomina o ustawieniu `requests` i `limits`.
 
 1.  Żądanie utworzenia Poda jest przechwytywane przez kontroler `LimitRange`, który automatycznie wstrzykuje do definicji kontenera `requests: { cpu: 200m }` oraz domyślny limit.
 2.  Następnie kontroler `ResourceQuota` sprawdza *zmodyfikowanego* Poda. Widzi on `request` 200m CPU. Sprawdza budżet przestrzeni nazw i akceptuje Poda (ponieważ 200m jest znacznie poniżej limitu 50 CPU).
 
-**Faza 2: Uruchomienie Poda (Lekcja 9.1)**
+### 9.4.3. Faza 2: Uruchomienie Poda (Lekcja 9.1)
 Pod zostaje zaplanowany na węźle, `kubelet` uruchamia kontener.
 
 1.  Natychmiast aktywowana jest *tylko* `startupProbe`. Sondy `liveness` i `readiness` są wstrzymane.
@@ -258,29 +267,32 @@ Pod zostaje zaplanowany na węźle, `kubelet` uruchamia kontener.
 4.  `kubelet` aktywuje `readinessProbe`. Sonda sprawdza (np. rozgrzanie cache) i po kolejnych 5 sekundach przechodzi pomyślnie.
 5.  Dopiero *teraz* Pod zostaje dodany do endpointów Serwisu i zaczyna przyjmować ruch. `livenessProbe` również staje się aktywna, monitorując stan zakleszczenia.
 
-**Faza 3: Autoskalowanie (Lekcja 9.2 + 9.3 + 9.1)**
+### 9.4.4. Faza 3: Autoskalowanie (Lekcja 9.2 + 9.3 + 9.1)
 Deweloper zdefiniował również HPA dla swojego wdrożenia z celem `targetCPUUtilizationPercentage: 80`.
 
 1.  Nadchodzi duży ruch. `Metrics Server` zbiera dane o użyciu.
 2.  Średnie użycie CPU w Podach wzrasta do 180m.
 3.  Kontroler HPA oblicza: Aktualne użycie (180m) / `request` (200m, wstrzyknięty przez `LimitRange`) = 90%.
 4.  Ponieważ 90% jest większe niż cel 80%, pętla kontrolna HPA decyduje o skalowaniu w górę i dodaje nowe Pody.
-5.  Nowo utworzone Pody *powtarzają* całą sekwencję z Fazy 2 (`startupProbe` -\> `readinessProbe`). Gwarantuje to, że żaden z nowych Podów nie otrzyma ruchu, dopóki nie będzie w 100% gotowy. Jest to kluczowa synergia między HPA (Lekcja 9.2) a `readinessProbe` (Lekcja 9.1).
+5.  Nowo utworzone Pody *powtarzają* całą sekwencję z Fazy 2 (`startupProbe` -> `readinessProbe`). Gwarantuje to, że żaden z nowych Podów nie otrzyma ruchu, dopóki nie będzie w 100% gotowy. Jest to kluczowa synergia między HPA (Lekcja 9.2) a `readinessProbe` (Lekcja 9.1).
 6.  HPA będzie kontynuować dodawanie Podów, aż średnie użycie spadnie do 80% LUB osiągnięta zostanie `maxReplicas` LUB suma `requests.cpu` wszystkich Podów osiągnie limit 50 CPU z `ResourceQuota` (Lekcja 9.3).
 
-**Faza 4: Samonaprawa i Odporność (Lekcja 9.1)**
+### 9.4.5. Faza 4: Samonaprawa i Odporność (Lekcja 9.1)
 Jeden z dziesięciu działających Podów napotyka wewnętrzne zakleszczenie (deadlock).
 
 1.  Jego `readinessProbe` (np. `httpGet`) może nadal przechodzić, ale `livenessProbe` (np. `exec` sprawdzający głębszą logikę) zawodzi.
 2.  Po `failureThreshold` (np. 3) próbach, `kubelet` siłowo restartuje *tylko ten jeden* kontener.
 3.  Dzięki `readinessProbe`, ruch nie był kierowany do tego Poda w momencie, gdy zawodził. HPA i pozostałe 9 Podów działają bez zakłóceń. System sam się naprawił.
 
-### Wniosek Końcowy
+### 9.4.6. Wniosek Końcowy
 
 Analiza Modułu 9 wykazuje, że `Probes` (Lekcja 9.1), `HorizontalPodAutoscaler` (Lekcja 9.2) oraz `ResourceQuota` i `LimitRange` (Lekcja 9.3) nie są oddzielnymi, zaawansowanymi funkcjami. Stanowią one zintegrowany, autonomiczny system zarządzania cyklem życia aplikacji.
 
 `LimitRange` i `ResourceQuota` (Lekcja 9.3) stanowią fundament, definiując reguły, budżety i gwarancje zasobów, które są niezbędne do działania HPA. `Metrics Server` i HPA (Lekcja 9.2) zapewniają elastyczność i adaptację do obciążenia, opierając swoje decyzje na regułach z Lekcji 9.3. Wreszcie, Sondy (Lekcja 9.1) gwarantują stabilność i odporność całego tego dynamicznego systemu, zapewniając, że ani startujące Pody, ani niestabilne Pody, ani Pody w trakcie awarii nie wpłyną negatywnie na użytkownika końcowego. Opanowanie ich *współdziałania* jest tym, co odróżnia administratora systemu od architekta platformy natywnej dla chmury.
-#### **Cytowane prace**
+
+---
+
+## Cytowane prace
 
 1. Kubernetes Limits vs. Requests: Key Differences and How They Work | Spot.io, otwierano: listopada 15, 2025, [https://spot.io/resources/kubernetes-architecture/kubernetes-limits-vs-requests-key-differences-and-how-they-work/](https://spot.io/resources/kubernetes-architecture/kubernetes-limits-vs-requests-key-differences-and-how-they-work/)  
 2. Resource Management for Pods and Containers \- Kubernetes, otwierano: listopada 15, 2025, [https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)  

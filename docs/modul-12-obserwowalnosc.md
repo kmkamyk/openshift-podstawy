@@ -1,8 +1,10 @@
-# Moduł 12. Obserwowalność w OpenShift Container Platform
+# Moduł 12: Obserwowalność w OpenShift Container Platform
+
+---
 
 ## Lekcja 12.1: Monitoring (Prometheus & Grafana)
 
-### Architektura Wbudowanego Stosu Monitoringu OCP
+### 12.1.1. Architektura Wbudowanego Stosu Monitoringu OCP
 
 Architektura monitoringu w OpenShift Container Platform (OCP) jest w pełni zintegrowanym, zarządzanym operatorem stosem, zaprojektowanym w celu zapewnienia natychmiastowej obserwowalności samej platformy oraz, opcjonalnie, aplikacji użytkownika.
 
@@ -15,12 +17,12 @@ Stos ten jest architektonicznie rozwidlony (z ang. *bifurcated*) na dwie odrębn
 
 Kluczowe komponenty domyślnego stosu platformy obejmują:
 
-*   **Prometheus Operator:** Wdrożony przez CMO, zarządza cyklem życia instancji Prometheus i Alertmanager dla platformy.[2]
-*   **Prometheus:** Dwie domyślne instancje (dla wysokiej dostępności) bazy danych szeregów czasowych, które skrobią metryki komponentów klastra, oceniają reguły i wysyłają alerty.[2]
-*   **Alertmanager:** Odbiera alerty z Prometheus, zarządza ich deduplikacją, grupowaniem i routingiem do skonfigurowanych odbiorców.[2, 4]
-*   **Grafana:** Platforma do wizualizacji i analizy metryk. Ważne jest, że domyślna instancja Grafany dostarczana ze stosem platformy jest skonfigurowana w trybie *tylko do odczytu (read-only)*.[4]
-*   **Thanos Querier:** Komponent zapewniający globalny, zagregowany widok zapytań (PromQL) dla wielu instancji Prometheus, w tym (jeśli jest włączony) stosu użytkownika. Jest to kluczowy punkt dostępu dla zapytań obejmujących cały klaster.[2, 5]
-*   **Telemeter Client:** Odpowiedzialny za wysyłanie podzbioru zanonimizowanych metryk kondycji klastra do Red Hat w celu zdalnego monitorowania (Remote Health Monitoring).[2, 4]
+* **Prometheus Operator:** Wdrożony przez CMO, zarządza cyklem życia instancji Prometheus i Alertmanager dla platformy.[2]
+* **Prometheus:** Dwie domyślne instancje (dla wysokiej dostępności) bazy danych szeregów czasowych, które skrobią metryki komponentów klastra, oceniają reguły i wysyłają alerty.[2]
+* **Alertmanager:** Odbiera alerty z Prometheus, zarządza ich deduplikacją, grupowaniem i routingiem do skonfigurowanych odbiorców.[2, 4]
+* **Grafana:** Platforma do wizualizacji i analizy metryk. Ważne jest, że domyślna instancja Grafany dostarczana ze stosem platformy jest skonfigurowana w trybie *tylko do odczytu (read-only)*.[4]
+* **Thanos Querier:** Komponent zapewniający globalny, zagregowany widok zapytań (PromQL) dla wielu instancji Prometheus, w tym (jeśli jest włączony) stosu użytkownika. Jest to kluczowy punkt dostępu dla zapytań obejmujących cały klaster.[2, 5]
+* **Telemeter Client:** Odpowiedzialny za wysyłanie podzbioru zanonimizowanych metryk kondycji klastra do Red Hat w celu zdalnego monitorowania (Remote Health Monitoring).[2, 4]
 
 Poniższa tabela systematyzuje kluczowe komponenty i ich role w architekturze bifurkacyjnej.
 
@@ -38,27 +40,27 @@ Poniższa tabela systematyzuje kluczowe komponenty i ich role w architekturze bi
 | **Prometheus (User-Workload)** | `openshift-user-workload-monitoring` | Baza danych szeregów czasowych; zbiera metryki *aplikacji użytkownika*. | Prometheus Operator (User) |
 | **Thanos Ruler (User-Workload)** | `openshift-user-workload-monitoring` | Ocenia reguły i alerty dla metryk *użytkownika*. | Prometheus Operator (User) |
 
-### Automonitorowanie Platformy: Jak OCP Obserwuje Samego Siebie
+### 12.1.2. Automonitorowanie Platformy: Jak OCP Obserwuje Samego Siebie
 
 Domyślna instancja monitoringu OCP jest skonfigurowana "out-of-the-box" do skrupulatnego obserwowania własnej kondycji. Zakres tego domyślnego monitorowania precyzyjnie definiuje, co Red Hat uważa za "granicę wsparcia" (support boundary) platformy.
 
 Stos platformy automatycznie wykrywa i zbiera metryki z kluczowych komponentów płaszczyzny sterowania (control plane) i krytycznej ścieżki danych (data path).[3] Lista ta obejmuje:
 
-*   `etcd` (rozproszona baza klucz-wartość)
-*   `Kubernetes API server`
-*   `Kubelets` (agenci na każdym węźle)
-*   `Kubernetes controller manager` i `Kubernetes scheduler`
-*   `OpenShift API server` i `OpenShift Controller Manager`
-*   `CoreDNS`
-*   `HAProxy` (dla tras OCP Ingress)
-*   `Image registry`
-*   `Operator Lifecycle Manager (OLM)`
+* `etcd` (rozproszona baza klucz-wartość)
+* `Kubernetes API server`
+* `Kubelets` (agenci na każdym węźle)
+* `Kubernetes controller manager` i `Kubernetes scheduler`
+* `OpenShift API server` i `OpenShift Controller Manager`
+* `CoreDNS`
+* `HAProxy` (dla tras OCP Ingress)
+* `Image registry`
+* `Operator Lifecycle Manager (OLM)`
 
 Co istotne, stos obserwowalności jest "samoświadomy" dzięki monitorowaniu krzyżowemu (cross-pillar monitoring). Stos monitoringu (Prometheus) aktywnie monitoruje również komponenty stosu logowania (Filar 2), takie jak `Fluentd` i `Elasticsearch` (jeśli są zainstalowane).[3] Jest to krytyczna cecha projektowa, która zapobiega "cichej awarii" stosu logowania; jeśli kolektor logów na węźle ulegnie awarii, Prometheus wykryje to i wygeneruje alert.
 
 Domyślnie platforma zawiera również bogaty zestaw predefiniowanych reguł alertowych (Prometheus Rules) specyficznie dla tych komponentów, informując administratorów o potencjalnych problemach, takich jak zapełnianie się wolumenów trwałych (Persistent Volumes) czy problemy z wydajnością `etcd`.[6] Wizualizacje dla tych kluczowych metryk platformy są natychmiast dostępne w konsoli webowej OCP.[7]
 
-### Włączanie Monitoringu dla Własnych Projektów
+### 12.1.3. Włączanie Monitoringu dla Własnych Projektów
 
 Domyślnie monitoring aplikacji użytkownika jest wyłączony w celu oszczędzania zasobów i zachowania ścisłej izolacji.[4] Aby umożliwić deweloperom monitorowanie ich własnych usług, administrator klastra (posiadający rolę `cluster-admin`) musi aktywować tę funkcję.[8]
 
@@ -72,15 +74,15 @@ Reakcją CMO na tę zmianę nie jest modyfikacja istniejącego stosu platformy. 
 
 Ten nowy stos jest tworzony w przestrzeni nazw `openshift-user-workload-monitoring` i obejmuje kluczowe komponenty [8, 10]:
 
-*   Drugi, dedykowany `prometheus-operator`
-*   Instancję `prometheus-user-workload` (do skrobania metryk aplikacji)
-*   Instancję `thanos-ruler-user-workload` (do oceny reguł alertowych użytkownika)
+* Drugi, dedykowany `prometheus-operator`
+* Instancję `prometheus-user-workload` (do skrobania metryk aplikacji)
+* Instancję `thanos-ruler-user-workload` (do oceny reguł alertowych użytkownika)
 
 Fizyczna segregacja instancji Prometheus gwarantuje, że metryki aplikacji (które mogą być niestabilne lub mieć wysoką kardynalność) są całkowicie odizolowane od metryk platformy, zapewniając najwyższy poziom stabilności.
 
 **Krytyczne Ostrzeżenie:** Włączenie wbudowanego monitoringu użytkownika (`enableUserWorkload: true`) jest fundamentalnie *niekompatybilne* z ręcznym instalowaniem "generycznego" Operatora Prometheus (np. z OperatorHub/OLM).[8, 10] Takie działanie prowadzi do konfliktu, w którym dwa różne operatory próbują zarządzać tymi samymi zasobami CRD (jak `ServiceMonitor`), co prowadzi do nadpisywania konfiguracji i awarii monitoringu.[11] Administrator musi wybrać jedną, wspieraną ścieżkę: albo w pełni zintegrowany stos OCP, albo w pełni niestandardowy ("DIY"), ale nie oba jednocześnie.
 
-### Użycie `ServiceMonitor` CRD, aby Prometheus automatycznie skrobał metryki
+### 12.1.4. Użycie `ServiceMonitor` CRD, aby Prometheus automatycznie skrobał metryki
 
 Po włączeniu monitoringu użytkownika, platforma OCP oferuje elegancki, deklaratywny mechanizm automatycznego wykrywania (service discovery) aplikacji, znany jako `ServiceMonitor`.
 
@@ -102,7 +104,7 @@ Przepływ działania jest następujący:
 
 Alternatywą dla `ServiceMonitor` jest `PodMonitor`, który działa na podobnej zasadzie, ale pomija warstwę `Service` i wykrywa pody bezpośrednio na podstawie ich etykiet.[12, 16, 18]
 
-### Dostęp do wbudowanych dashboardów Grafana
+### 12.1.5. Dostęp do wbudowanych dashboardów Grafana
 
 Dostęp do wbudowanej instancji Grafana jest możliwy z poziomu konsoli OCP, w sekcji `Observe > Dashboards`.[21] Ta domyślna instancja zawiera predefiniowane dashboardy dla monitorowanych komponentów platformy (np. `etcd`, `Kubelet`).[3]
 
@@ -117,9 +119,11 @@ Wspieraną i rekomendowaną metodą na tworzenie niestandardowych wizualizacji j
 5.  `Thanos Querier` działa jako pojedynczy, globalny punkt dostępu (endpoint), który agreguje i deduplikuje metryki *zarówno* ze stosu platformy, jak i stosu użytkownika. Podłączenie do niego niestandardowej Grafany daje dostęp do *wszystkich* metryk w klastrze w bezpieczny sposób.
 6.  Uwierzytelnienie nowej Grafany do `Thanos Querier` wymaga stworzenia dedykowanego `ServiceAccount` i przyznania mu odpowiednich uprawnień RBAC do odpytywania API Prometheus.[25]
 
+---
+
 ## Lekcja 12.2: Logowanie (EFK / Loki)
 
-### Architektura stosu logowania (Fluentd na każdym węźle, Loki lub Elasticsearch jako backend, Kibana/Grafana jako UI)
+### 12.2.1. Architektura stosu logowania (Fluentd na każdym węźle, Loki lub Elasticsearch jako backend, Kibana/Grafana jako UI)
 
 Architektura logowania w OCP, podobnie jak monitoringu, jest wysoce modułowa i zarządzana przez dedykowany operator. **Operator Cluster Logging (CLO)** obserwuje zasób niestandardowy (CRD) o nazwie `ClusterLogging`. Ten pojedynczy zasób CRD działa jak centralna "tablica rozdzielcza", w której administrator deklaruje pożądany stan całego potoku logowania (pipeline).[26]
 
@@ -127,28 +131,28 @@ Potok ten składa się z trzech głównych komponentów:
 
 1.  **Kolektor (Collector):** Jest to komponent wdrożony jako `DaemonSet`, co oznacza, że jego pod działa na każdym węźle roboczym (Worker Node) i węźle płaszczyzny sterowania (Control Plane Node) klastra.[27] Jego zadaniem jest zbieranie logów ze źródeł na węźle (głównie logi kontenerów z `stdout`/`stderr` z `/var/log/containers` oraz logi systemowe węzła z `journald` [28]). Kolektor również wzbogaca te logi o kluczowe metadane Kubernetes, takie jak przestrzeń nazw, nazwa poda i etykiety.[29] OCP historycznie używało **Fluentd** [30], ale nowsze wersje wspierają również **Vector** jako nowocześniejszy, bardziej wydajny kolektor.[27]
 2.  **Magazyn (Log Store):** Jest to backend, do którego kolektory przesyłają zebrane i przetworzone logi. Administrator definiuje ten backend w CRD `ClusterLogging`. OCP wspiera dwa główne typy magazynów:
-    *   **Elasticsearch (EFK):** Tradycyjny, potężny silnik wyszukiwania pełnotekstowego.[31, 32]
-    *   **Loki:** Nowocześniejszy, lekki system agregacji logów wdrażany jako `LokiStack`.[31, 33, 34]
+    * **Elasticsearch (EFK):** Tradycyjny, potężny silnik wyszukiwania pełnotekstowego.[31, 32]
+    * **Loki:** Nowocześniejszy, lekki system agregacji logów wdrażany jako `LokiStack`.[31, 33, 34]
 3.  **Wizualizator (UI):** Interfejs użytkownika używany do przeszukiwania, filtrowania i wizualizacji logów. Wybór wizualizatora jest ściśle powiązany z wyborem magazynu:
-    *   **Kibana:** Używana *wyłącznie* w połączeniu z Elasticsearch.[33, 35]
-    *   **Konsola OCP / Grafana:** Używane w połączeniu z Loki. Logi są dostępne bezpośrednio w konsoli OCP (`Observe > Logs`) lub mogą być analizowane w Grafanie (tej samej, która służy do metryk).[33, 36]
+    * **Kibana:** Używana *wyłącznie* w połączeniu z Elasticsearch.[33, 35]
+    * **Konsola OCP / Grafana:** Używane w połączeniu z Loki. Logi są dostępne bezpośrednio w konsoli OCP (`Observe > Logs`) lub mogą być analizowane w Grafanie (tej samej, która służy do metryk).[33, 36]
 
-### Różnica między EFK (Elasticsearch) a Loki (lżejsze, bazujące na etykietach)
+### 12.2.2. Różnica między EFK (Elasticsearch) a Loki (lżejsze, bazujące na etykietach)
 
 Wybór między Elasticsearch a Loki jest jedną z najważniejszych decyzji architektonicznych dotyczących obserwowalności w OCP. Reprezentują one dwa fundamentalnie różne podejścia do indeksowania i przechowywania logów, co pociąga za sobą bezpośredni kompromis między *mocą zapytań* a *kosztem operacyjnym*.
 
 **Stos EFK (Elasticsearch, Fluentd, Kibana):**
 
-*   **Zasada Działania:** Elasticsearch stosuje metodę **indeksowania pełnotekstowego (full-text index)**. Oznacza to, że każda linia logu jest analizowana, a niemal każde słowo w niej zawarte jest indeksowane.[32, 37, 38]
-*   **Zalety:** Zapewnia to niezwykle potężne i szybkie możliwości wyszukiwania pełnotekstowego, analityki i agregacji, podobne do wyszukiwarki internetowej.[37]
-*   **Wady:** Koszt tej mocy jest ogromny. Indeksowanie pełnotekstowe jest procesem **wysoce zasobożernym** (CPU, pamięć RAM).[37, 39] Wymaga również znacznej ilości szybkiej przestrzeni dyskowej (Persistent Volumes), co jest drogie.[32] Przyjmowanie logów (ingestion) może stać się wąskim gardłem przy dużym wolumenie [31, 40], a skalowanie klastra Elasticsearch jest złożone i kosztowne.[39] W OCP, domyślna instancja ES jest optymalizowana tylko do krótkotrwałego przechowywania (np. 7 dni).[31, 32]
+* **Zasada Działania:** Elasticsearch stosuje metodę **indeksowania pełnotekstowego (full-text index)**. Oznacza to, że każda linia logu jest analizowana, a niemal każde słowo w niej zawarte jest indeksowane.[32, 37, 38]
+* **Zalety:** Zapewnia to niezwykle potężne i szybkie możliwości wyszukiwania pełnotekstowego, analityki i agregacji, podobne do wyszukiwarki internetowej.[37]
+* **Wady:** Koszt tej mocy jest ogromny. Indeksowanie pełnotekstowe jest procesem **wysoce zasobożernym** (CPU, pamięć RAM).[37, 39] Wymaga również znacznej ilości szybkiej przestrzeni dyskowej (Persistent Volumes), co jest drogie.[32] Przyjmowanie logów (ingestion) może stać się wąskim gardłem przy dużym wolumenie [31, 40], a skalowanie klastra Elasticsearch jest złożone i kosztowne.[39] W OCP, domyślna instancja ES jest optymalizowana tylko do krótkotrwałego przechowywania (np. 7 dni).[31, 32]
 
 **Stos Loki (LokiStack):**
 
-*   **Zasada Działania:** Loki jest inspirowany Prometheusem i działa na zasadzie **indeksowania tylko etykiet (labels-only index)**.[41] *Nie indeksuje* on pełnej treści tekstowej logów.[32, 37, 40]
-*   Indeksowany jest tylko mały, stały zestaw metadanych (etykiet), takich jak `namespace`, `pod`, `app`, `level`.[38] Sama treść logu jest kompresowana w "bloki" (chunks) i przechowywana w tanim magazynie obiektowym (np. Amazon S3, GCS, Azure Blob Storage lub MinIO).[37]
-*   **Zalety:** Podejście to jest **wyjątkowo lekkie i tanie**. Zużycie zasobów (CPU/RAM) jest minimalne w porównaniu do EFK.[37] Przyjmowanie logów jest błyskawiczne, ponieważ nie ma kosztownego indeksowania.[32, 40] Skalowanie horyzontalne jest proste, a koszt przechowywania (w magazynie obiektowym) jest drastycznie niższy.[38, 41]
-*   **Wady:** Możliwości zapytań są inne. Zapytanie (w języku LogQL) musi najpierw szybko filtrować logi na podstawie *etykiet*, a następnie może "grepować" (przeszukiwać tekst) wewnątrz dopasowanych bloków.[37, 42] Jest to mniej wydajne dla zapytań analitycznych obejmujących całą treść logów.
+* **Zasada Działania:** Loki jest inspirowany Prometheusem i działa na zasadzie **indeksowania tylko etykiet (labels-only index)**.[41] *Nie indeksuje* on pełnej treści tekstowej logów.[32, 37, 40]
+* Indeksowany jest tylko mały, stały zestaw metadanych (etykiet), takich jak `namespace`, `pod`, `app`, `level`.[38] Sama treść logu jest kompresowana w "bloki" (chunks) i przechowywana w tanim magazynie obiektowym (np. Amazon S3, GCS, Azure Blob Storage lub MinIO).[37]
+* **Zalety:** Podejście to jest **wyjątkowo lekkie i tanie**. Zużycie zasobów (CPU/RAM) jest minimalne w porównaniu do EFK.[37] Przyjmowanie logów jest błyskawiczne, ponieważ nie ma kosztownego indeksowania.[32, 40] Skalowanie horyzontalne jest proste, a koszt przechowywania (w magazynie obiektowym) jest drastycznie niższy.[38, 41]
+* **Wady:** Możliwości zapytań są inne. Zapytanie (w języku LogQL) musi najpierw szybko filtrować logi na podstawie *etykiet*, a następnie może "grepować" (przeszukiwać tekst) wewnątrz dopasowanych bloków.[37, 42] Jest to mniej wydajne dla zapytań analitycznych obejmujących całą treść logów.
 
 **Strategia Red Hat i Migracja:**
 
@@ -171,25 +175,27 @@ Poniższa tabela podsumowuje kluczowe różnice techniczne.
 | **Główne Przeznaczenie** | Zaawansowana analityka logów, wyszukiwanie pełnotekstowe [38] | Efektywne kosztowo debugowanie i przeglądanie logów [38] |
 | **Status w OCP** | **Przestarzały (Deprecated)** [33] | **Rekomendowany** [33, 44] |
 
-### Przeglądanie logów (infrastruktury i aplikacji) w konsoli OCP
+### 12.2.3. Przeglądanie logów (infrastruktury i aplikacji) w konsoli OCP
 
 W konsoli webowej OpenShift istnieją dwa fundamentalnie różne sposoby interakcji z logami, a ich zrozumienie jest kluczowe dla efektywnego debugowania.
 
 1.  **Logi Strumieniowe (z Poda):**
     Jest to widok dostępny w sekcji `Workloads > Pods`, po wybraniu konkretnego poda i przejściu do zakładki `Logs`.[45, 46, 47] Ten interfejs jest graficznym odpowiednikiem komendy `oc logs <nazwa_poda>`.[45, 48]
-    *   **Co pokazuje:** *Bieżący* strumień (live stream) `stdout` i `stderr` z kontenera.[46]
-    *   **Ograniczenia:** Ten widok *nie odpytuje* centralnego magazynu logów (ani EFK, ani Loki). Jest to tylko bufor ostatnich logów przechowywanych przez Kubelet na węźle. Jeśli pod uległ awarii i został zrestartowany, lub jeśli został usunięty, te logi są *tracone*. Jest to przydatne tylko do obserwacji działającej aplikacji w czasie rzeczywistym.
+    * **Co pokazuje:** *Bieżący* strumień (live stream) `stdout` i `stderr` z kontenera.[46]
+    * **Ograniczenia:** Ten widok *nie odpytuje* centralnego magazynu logów (ani EFK, ani Loki). Jest to tylko bufor ostatnich logów przechowywanych przez Kubelet na węźle. Jeśli pod uległ awarii i został zrestartowany, lub jeśli został usunięty, te logi są *tracone*. Jest to przydatne tylko do obserwacji działającej aplikacji w czasie rzeczywistym.
 
 2.  **Logi Zagregowane (z Magazynu):**
     Jest to centralny, historyczny widok logów dostępny w głównej sekcji `Observe > Logs`.[36, 49, 50]
-    *   **Wymagania:** Ta zakładka jest funkcjonalna *tylko* wtedy, gdy administrator zainstalował i skonfigurował Operatora Cluster Logging (CLO) i co najmniej jeden backend logów (EFK lub Loki).[47, 51]
-    *   **Zachowanie zależne od backendu:**
-        *   W przypadku starego stosu **EFK**, ten widok (`Observe > Logs`) był często wyłączony. Użytkownik musiał opuścić konsolę OCP i przejść do oddzielnego adresu URL, aby otworzyć interfejs **Kibana**.[36, 45, 51]
-        *   W przypadku nowoczesnego stosu **LokiStack**, ta zakładka jest *włączona* i w pełni zintegrowana z konsolą OCP (poprzez `logging-view-plugin` [49, 50, 52]). Zapewnia ona natywny interfejs do uruchamiania zapytań LogQL i przeglądania logów historycznych (aplikacji i infrastruktury) bez opuszczania konsoli OCP.[33]
+    * **Wymagania:** Ta zakładka jest funkcjonalna *tylko* wtedy, gdy administrator zainstalował i skonfigurował Operatora Cluster Logging (CLO) i co najmniej jeden backend logów (EFK lub Loki).[47, 51]
+    * **Zachowanie zależne od backendu:**
+        * W przypadku starego stosu **EFK**, ten widok (`Observe > Logs`) był często wyłączony. Użytkownik musiał opuścić konsolę OCP i przejść do oddzielnego adresu URL, aby otworzyć interfejs **Kibana**.[36, 45, 51]
+        * W przypadku nowoczesnego stosu **LokiStack**, ta zakładka jest *włączona* i w pełni zintegrowana z konsolą OCP (poprzez `logging-view-plugin` [49, 50, 52]). Zapewnia ona natywny interfejs do uruchamiania zapytań LogQL i przeglądania logów historycznych (aplikacji i infrastruktury) bez opuszczania konsoli OCP.[33]
+
+---
 
 ## Lekcja 12.3: Wprowadzenie do Tracingu (Jaeger) i OpenTelemetry
 
-### Trzeci filar obserwowalności (Metryki, Logi, Tracing)
+### 12.3.1. Trzeci filar obserwowalności (Metryki, Logi, Tracing)
 
 Podczas gdy monitoring (metryki) i logowanie (logi) są podstawą, nie zapewniają one pełnego obrazu w złożonych, rozproszonych architekturach. Obserwowalność opiera się na trzech filarach, z których każdy odpowiada na inne kluczowe pytanie podczas analizy problemu.[53, 54, 55]
 
@@ -213,7 +219,7 @@ Poniższa tabela podsumowuje role poszczególnych filarów.
 | **Logi** | **Dlaczego?** (Co się stało w danym momencie?) | Chronologiczny, tekstowy zapis zdarzeń [53] | `ERROR: Connection refused for user 'x'` [58] |
 | **Ślady** | **Gdzie?** (Gdzie jest wąskie gardło?) | Skontekstualizowana ścieżka żądania (Span/Trace) [53] | `Żądanie X: 20ms (API-GW) -> 2.5s (Usługa B)` [55] |
 
-### Czym jest Tracing Dystrybuowany (śledzenie żądania przez wiele mikrousług)
+### 12.3.2. Czym jest Tracing Dystrybuowany (śledzenie żądania przez wiele mikrousług)
 
 W tradycyjnej aplikacji monolitycznej debugowanie jest stosunkowo proste.[56] W architekturze mikrousługowej pojedyncze żądanie użytkownika (np. złożenie zamówienia) jest "rozbijane na dziesiątki kawałków" [56], które komunikują się ze sobą przez API (HTTP, gRPC).[59, 60] Jeśli żądanie jest wolne lub kończy się błędem, znalezienie winnej usługi jest jak szukanie igły w stogu siana.[61]
 
@@ -221,10 +227,10 @@ W tradycyjnej aplikacji monolitycznej debugowanie jest stosunkowo proste.[56] W 
 
 Podstawową jednostką jest **Span** (fragment). Span reprezentuje pojedynczą, logiczną jednostkę pracy w ramach jednej usługi (np. odebranie żądania HTTP, zapytanie do bazy danych, wywołanie innej usługi).[56, 59, 63] Każdy Span posiada:
 
-*   Unikalny `Span ID`.
-*   `Parent ID` (wskazujący na `Span ID` operacji, która go wywołała).
-*   Nazwę operacji, czas rozpoczęcia i czas trwania.
-*   Tagi (metadane) i logi (zdarzenia w ramach spana).[56, 64]
+* Unikalny `Span ID`.
+* `Parent ID` (wskazujący na `Span ID` operacji, która go wywołała).
+* Nazwę operacji, czas rozpoczęcia i czas trwania.
+* Tagi (metadane) i logi (zdarzenia w ramach spana).[56, 64]
 
 **Trace** (ślad) to zbiór wszystkich spanów (z różnych usług), które pochodzą od jednego żądania inicjującego. Wszystkie spany w ramach jednego śladu współdzielą ten sam, unikalny identyfikator: **`Trace ID`**.[56, 59]
 
@@ -237,16 +243,16 @@ Kluczowym mechanizmem, który pozwala "zszywać" (stitch) poszczególne spany w 
 
 Jeśli *jakakolwiek* usługa w łańcuchu nie przekaże tych nagłówków, ślad zostaje w tym miejscu *zerwany*. Dlatego tak kluczowe są standardy, takie jak **W3C Trace Context** (używający nagłówka `traceparent`) lub **B3** (używający nagłówków `X-B3-TraceId`), które zapewniają interoperacyjność.[65]
 
-### Instalacja Operatora Jaeger
+### 12.3.3. Instalacja Operatora Jaeger
 
 Samo generowanie śladów to tylko połowa sukcesu. Ślady te muszą być wysyłane do centralnego *backendu*, który potrafi je zbierać, przechowywać i wizualizować. **Jaeger** to otwarty (open-source), kompletny system do śledzenia rozproszonego, pierwotnie stworzony w firmie Uber, a obecnie projekt CNCF.[63, 66, 67]
 
 Jaeger *nie jest* narzędziem do metryk ani logów.[67, 68] Jest to wysoce wyspecjalizowany backend *wyłącznie dla śladów*, który dostarcza:
 
-*   Kolektory (agenty) do odbierania spanów.
-*   Trwały magazyn (Storage Backend) do ich przechowywania.
-*   Interfejs API do ich odpytywania.
-*   Potężny interfejs graficzny (UI) do wizualizacji śladów, analizy zależności między usługami i optymalizacji opóźnień.[63, 66, 69]
+* Kolektory (agenty) do odbierania spanów.
+* Trwały magazyn (Storage Backend) do ich przechowywania.
+* Interfejs API do ich odpytywania.
+* Potężny interfejs graficzny (UI) do wizualizacji śladów, analizy zależności między usługami i optymalizacji opóźnień.[63, 66, 69]
 
 W OpenShift, rekomendowaną metodą instalacji Jaegera jest użycie **Operatora Jaeger** (Jaeger Operator) dostępnego w OperatorHub.[70, 71, 72]
 
@@ -256,10 +262,10 @@ W OpenShift, rekomendowaną metodą instalacji Jaegera jest użycie **Operatora 
 2.  Powodem tej zależności jest fakt, że Jaeger (w trybie produkcyjnym) używa zewnętrznej bazy danych do trwałego przechowywania śladów. Domyślnie jest to Elasticsearch lub Cassandra.[67, 72] Oznacza to, że *ten sam* klaster Elasticsearch, który jest używany przez stos logowania EFK, może być *współużytkowany* jako magazyn dla śladów Jaegera.
 3.  Następnie administrator instaluje Operatora Jaeger z OperatorHub.[70]
 4.  Po zainstalowaniu operatora, administrator tworzy zasób niestandardowy (CRD) `Jaeger`, określając pożądaną strategię wdrożenia:
-    *   **`all-in-one`:** Proste wdrożenie do celów deweloperskich i testowych. Wszystkie komponenty Jaegera działają w jednym podzie, a ślady przechowywane są w pamięci (`in-memory`) i tracone po restarcie.[70, 72]
-    *   **`production`:** Skalowalne wdrożenie produkcyjne, które rozdziela komponenty (kolektor, agent, UI) i konfiguruje trwały magazyn (np. wcześniej wdrożony Elasticsearch).[72]
+    * **`all-in-one`:** Proste wdrożenie do celów deweloperskich i testowych. Wszystkie komponenty Jaegera działają w jednym podzie, a ślady przechowywane są w pamięci (`in-memory`) i tracone po restarcie.[70, 72]
+    * **`production`:** Skalowalne wdrożenie produkcyjne, które rozdziela komponenty (kolektor, agent, UI) i konfiguruje trwały magazyn (np. wcześniej wdrożony Elasticsearch).[72]
 
-### Rola `OpenTelemetry` (OTel) jako nowego standardu instrumentacji kodu
+### 12.3.4. Rola `OpenTelemetry` (OTel) jako nowego standardu instrumentacji kodu
 
 Historycznie, świat śledzenia był sfragmentowany. Dwa wiodące otwarte projekty, **OpenTracing** (framework API) i **OpenCensus** (zbiór bibliotek od Google), konkurowały ze sobą, tworząc zamieszanie i utrudniając standaryzację.[73, 74]
 
@@ -269,8 +275,8 @@ OpenTelemetry to **neutralny od dostawców (vendor-neutral) framework do obserwo
 
 Kluczową korzyścią OTel jest **niezależność od dostawcy (vendor independence)** [76]:
 
-*   **Problem "Przed OTel":** Jeśli firma instrumentowała swoje aplikacje za pomocą agentów i bibliotek (SDK) komercyjnego dostawcy (np. Datadog), a następnie chciała przejść na innego dostawcę (np. New Relic), musiała *przepisać całą instrumentację* w swoim kodzie źródłowym.[73]
-*   **Rozwiązanie "z OTel":** Deweloperzy instrumentują swój kod *tylko raz*, używając standardowych **API i SDK OpenTelemetry** (dostępnych dla większości języków, np. Java, Go, Python,.NET).[77, 78, 79] Następnie aplikacja może być *skonfigurowana* (bez zmiany kodu) do eksportowania telemetrii do *dowolnego* backendu – czy to otwartego (Jaeger, Prometheus) czy komercyjnego (Datadog, Azure Monitor).[75, 78]
+* **Problem "Przed OTel":** Jeśli firma instrumentowała swoje aplikacje za pomocą agentów i bibliotek (SDK) komercyjnego dostawcy (np. Datadog), a następnie chciała przejść na innego dostawcę (np. New Relic), musiała *przepisać całą instrumentację* w swoim kodzie źródłowym.[73]
+* **Rozwiązanie "z OTel":** Deweloperzy instrumentują swój kod *tylko raz*, używając standardowych **API i SDK OpenTelemetry** (dostępnych dla większości języków, np. Java, Go, Python,.NET).[77, 78, 79] Następnie aplikacja może być *skonfigurowana* (bez zmiany kodu) do eksportowania telemetrii do *dowolnego* backendu – czy to otwartego (Jaeger, Prometheus) czy komercyjnego (Datadog, Azure Monitor).[75, 78]
 
 Co najważniejsze, OpenTelemetry jest *siłą unifikującą* dla wszystkich trzech filarów obserwowalności. Podczas gdy Jaeger skupia się tylko na śladach [67], a Prometheus tylko na metrykach, OTel jest *pierwszym* standardem, który dostarcza **API i SDK do generowania metryk, logów ORAZ śladów**.[75, 76, 80, 81] Umożliwia to korelację tych sygnałów u samego źródła, na przykład poprzez automatyczne wstrzykiwanie `Trace ID` do wszystkich logów generowanych w trakcie danej transakcji.[80]
 
@@ -284,7 +290,7 @@ Poniższa tabela ilustruje ewolucję, która doprowadziła do powstania OTel.
 | **OpenCensus** | Zestaw bibliotek do śledzenia i metryk (od Google). | Ślady (Traces) i Metryki (Metrics) | Przestarzały (Deprecated); wchłonięty przez OTel [74] |
 | **OpenTelemetry (OTel)** | Jeden, neutralny standard instrumentacji i eksportu. | **Ślady (Traces), Metryki (Metrics) i Logi (Logs)** [75] | **Aktualny Standard Branżowy** [76, 77] |
 
-### Wprowadzenie do Tracingu (Jaeger) i OpenTelemetry
+### 12.3.5. Wprowadzenie do Tracingu (Jaeger) i OpenTelemetry
 
 OpenTelemetry (warstwa instrumentacji) i Jaeger (warstwa backendu) nie są konkurentami – są idealnie komplementarne.[68, 82]
 
@@ -297,15 +303,17 @@ Standardowy przepływ pracy wygląda następująco:
 3.  Aplikacja eksportuje *wszystkie* te dane w standardowym formacie **OTLP** (OpenTelemetry Protocol) do *jednego* miejsca: instancji **OTel Collector**.[81, 83]
 4.  OTel Collector jest skonfigurowany za pomocą potoku (pipeline) `receivers -> processors -> exporters`.[84]
 5.  Kolektor odbiera dane OTLP, a następnie *rozdziela* je (fan-out) do odpowiednich backendów:
-    *   Używa `jaeger_exporter` do wysłania **śladów** do backendu Jaeger.[82, 83]
-    *   Używa `prometheus_exporter` do wysłania **metryk** do Prometheus.
-    *   Używa `loki_exporter` do wysłania **logów** do Loki.
+    * Używa `jaeger_exporter` do wysłania **śladów** do backendu Jaeger.[82, 83]
+    * Używa `prometheus_exporter` do wysłania **metryk** do Prometheus.
+    * Używa `loki_exporter` do wysłania **logów** do Loki.
 
 Ta architektura jest niezwykle potężna, ponieważ aplikacja jest całkowicie odizolowana od wiedzy o backendach.[75] W przyszłości, jeśli firma zechce wysyłać ślady *równocześnie* do Jaegera i do komercyjnego narzędzia X, wystarczy dodać drugi eksporter w konfiguracji Kolektora – bez *żadnych* zmian w aplikacji.
 
 Co więcej, sam projekt Jaeger ewoluuje w tym kierunku. Najnowsze wersje komponentów backendu Jaegera są *budowane na bazie* OTel Collector.[85] Oznacza to, że w przyszłości "binarka Jaegera" będzie po prostu OTel Collectorem ze wstępnie skonfigurowanymi odbiornikami OTLP i eksporterem do magazynu Jaegera, co ostatecznie cementuje OTel jako uniwersalny standard dla całej branży.[85] Red Hat również dostarcza własną, wspieraną dystrybucję OpenTelemetry.[86]
 
-## Wnioski Modułu 12: Strategia Zunifikowanej Obserwowalności w OCP
+---
+
+## Lekcja 12.4: Wnioski Modułu 12: Strategia Zunifikowanej Obserwowalności w OCP
 
 Analiza trzech filarów obserwowalności w OpenShift ujawnia dwa nadrzędne, strategiczne trendy, które kierują ewolucją platformy: unifikację interfejsu użytkownika i wydajności oraz unifikację warstwy instrumentacji.
 
@@ -324,7 +332,10 @@ Przyszłością obserwowalności w OCP jest w pełni ujednolicony potok, oparty 
 4.  **Wizualizacja:** Użytkownik korzysta ze zunifikowanego interfejsu (Grafana lub Konsola OCP) do analizy metryk i logów [36] oraz z UI Jaegera do głębokiej analizy śladów.[67]
 
 Dzięki temu podejściu OpenShift przekształca się ze zbioru oddzielnych narzędzi do obserwacji w spójną, zintegrowaną i efektywną kosztowo platformę obserwowalności.
-#### **Cytowane prace**
+
+---
+
+## Cytowane prace
 
 1. Chapter 1\. Monitoring overview | Monitoring | OpenShift Container Platform | 4.12 | Red Hat Documentation, otwierano: listopada 15, 2025, [https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.12/html/monitoring/monitoring-overview](https://docs.redhat.com/en/documentation/openshift_container_platform/4.12/html/monitoring/monitoring-overview)  
 2. Chapter 1\. About OpenShift Container Platform monitoring \- Red Hat Documentation, otwierano: listopada 15, 2025, [https://docs.redhat.com/en/documentation/openshift\_container\_platform/4.18/html/monitoring/about-openshift-container-platform-monitoring](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/monitoring/about-openshift-container-platform-monitoring)  
