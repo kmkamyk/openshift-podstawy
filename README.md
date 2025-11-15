@@ -53,3 +53,11 @@ Całość podzielona jest na moduły, które progresywnie budują wiedzę.
 
 * **[Moduł 13: Co Dalej?](./docs/modul-13-co-dalej.md)**
     * Wprowadzenie do tematów zaawansowanych (Service Mesh, Serverless, Virtualization) i ścieżek certyfikacji.
+
+## Licencja
+
+Treści w tym repozytorium są udostępnione na licencji **GNU General Public License v3.0 (GPLv3)**.
+
+Oznacza to, że masz swobodę uruchamiania, studiowania, udostępniania i modyfikowania oprogramowania (lub w tym przypadku, treści). Wszelkie dzieła pochodne muszą być również dystrybuowane na tych samych warunkach licencyjnych.
+
+Zaleca się umieszczenie pełnej treści licencji w pliku `LICENSE` w głównym katalogu repozytorium. [Pełną treść licencji GPLv3 można znaleźć tutaj](https://www.gnu.org/licenses/gpl-3.0.html).
