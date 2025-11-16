@@ -1,12 +1,12 @@
 # Ścieżka Nauki: Od Podstaw K8s do Poziomu Średniozaawansowanego w OpenShift
 
-To repozytorium dokumentuje ścieżkę nauki platformy OpenShift (w wersji 4.x). Agenda ta powstała jako ustrukturyzowany plan, który przygotowałem na własne potrzeby, aby przejść od podstaw Kubernetesa do zagadnień specyficznych dla OpenShift.
+To repozytorium dokumentuje moją osobistą ścieżkę nauki platformy OpenShift (w wersji 4.x). Agenda ta powstała jako ustrukturyzowany plan, który przygotowałem na własne potrzeby, aby przejść od podstaw Kubernetesa do zagadnień specyficznych dla OpenShift.
 
 Plan szkoleniowy został pierwotnie wygenerowany przy pomocy Gemini, aby zapewnić logiczną kolejność i pokrycie materiału. Następnie, poszczególne moduły zostały uzupełnione o szczegółowe lekcje w oparciu o analizę dokumentacji technicznej i dostępne zasoby (proces "deepsearch").
 
 ## Cel Repozytorium
 
-Głównym celem jest usystematyzowanie wiedzy i stworzenie "mapy drogowej" dla procesu nauki. Repozytorium to nie jest oficjalnym kursem, lecz zbiorem zagadnień, które są kluczowe do zrozumienia platformy. Struktura może być przydatna również dla innych osób rozpoczynających naukę OpenShift.
+Głównym celem jest usystematyzowanie wiedzy i stworzenie "mapy drogowej" dla procesu nauki. Repozytorium to nie jest oficjalnym kursem, lecz zbiorem zagadnień, które uznałem za kluczowe do zrozumienia platformy. Dzielę się tym w nadziei, że taka struktura może być przydatna również dla innych osób rozpoczynających pracę z OpenShift.
 
 ## Struktura Agendy
 
@@ -18,7 +18,7 @@ Całość podzielona jest na moduły, które progresywnie budują wiedzę.
 * **[Moduł 1: Fundamenty](./docs/modul-01-fundamenty.md)**
     * Wyjaśnia kluczowe różnice filozoficzne i techniczne między "czystym" Kubernetesem (K8s) a OpenShift (OCP), m.in. `Project` vs `Namespace`, `oc` vs `kubectl` oraz architektura bazująca na Operatorach.
 
-* **[Moduł 2: Zarządzanie Obrazami](./docs/modul-02-zarzadzanie-obrazami.md)**
+* **[Moduł 2: Budowanie Aplikacji](./docs/modul-02-budowanie-aplikacji.md)**
     * Omawia zintegrowany rejestr, obiekty `ImageStream` oraz strategie budowania, ze szczególnym uwzględnieniem **S2I (Source-to-Image)**.
 
 * **[Moduł 3: Wdrażanie Aplikacji](./docs/modul-03-wdrazanie-aplikacji.md)**
@@ -56,8 +56,15 @@ Całość podzielona jest na moduły, które progresywnie budują wiedzę.
 
 ## Licencja
 
-Treści w tym repozytorium są udostępnione na licencji **GNU General Public License v3.0 (GPLv3)**.
+Treści w tym repozytorium są udostępnione na licencji **Creative Commons Uznanie autorstwa-Użycie niekomercyjne-Na tych samych warunkach 4.0 Międzynarodowe (CC BY-NC-SA 4.0)**.
 
-Oznacza to, że masz swobodę uruchamiania, studiowania, udostępniania i modyfikowania oprogramowania (lub w tym przypadku, treści). Wszelkie dzieła pochodne muszą być również dystrybuowane na tych samych warunkach licencyjnych.
+Oznacza to, że możesz swobodnie:
+* **Dzielić się** — kopiować i rozpowszechniać utwór w dowolnym medium i formacie.
+* **Adaptować** — remiksować, przekształcać i tworzyć na bazie utworu.
 
-Zaleca się umieszczenie pełnej treści licencji w pliku `LICENSE` w głównym katalogu repozytorium. [Pełną treść licencji GPLv3 można znaleźć tutaj](https://www.gnu.org/licenses/gpl-3.0.html).
+Na następujących warunkach:
+* **Uznanie autorstwa (BY)** — Musisz odpowiednio oznaczyć utwór, podać link do licencji i wskazać, czy dokonano zmian.
+* **Użycie niekomercyjne (NC)** — Nie możesz używać utworu do celów komercyjnych.
+* **Na tych samych warunkach (SA)** — Jeśli remiksujesz, przekształcasz lub tworzysz na bazie utworu, musisz rozpowszechniać swoje dzieła na tej samej licencji, co oryginał.
+
+[Pełna treść licencji dostępna jest tutaj.](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pl)
