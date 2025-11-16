@@ -1,12 +1,12 @@
 # Ścieżka Nauki: Od Podstaw K8s do Poziomu Średniozaawansowanego w OpenShift
 
-To repozytorium dokumentuje moją osobistą ścieżkę nauki platformy OpenShift (w wersji 4.x). Agenda ta powstała jako ustrukturyzowany plan, który przygotowałem na własne potrzeby, aby przejść od podstaw Kubernetesa do zagadnień specyficznych dla OpenShift.
+To repozytorium dokumentuje ścieżkę nauki platformy OpenShift (w wersji 4.x). Agenda ta powstała jako ustrukturyzowany plan, który przygotowałem na własne potrzeby, aby przejść od podstaw Kubernetesa do zagadnień specyficznych dla OpenShift.
 
 Plan szkoleniowy został pierwotnie wygenerowany przy pomocy Gemini, aby zapewnić logiczną kolejność i pokrycie materiału. Następnie, poszczególne moduły zostały uzupełnione o szczegółowe lekcje w oparciu o analizę dokumentacji technicznej i dostępne zasoby (proces "deepsearch").
 
 ## Cel Repozytorium
 
-Głównym celem jest usystematyzowanie wiedzy i stworzenie "mapy drogowej" dla procesu nauki. Repozytorium to nie jest oficjalnym kursem, lecz zbiorem zagadnień, które uznałem za kluczowe do zrozumienia platformy. Dzielę się tym w nadziei, że taka struktura może być przydatna również dla innych osób rozpoczynających pracę z OpenShift.
+Głównym celem jest usystematyzowanie wiedzy i stworzenie "mapy drogowej" dla procesu nauki. Repozytorium to nie jest oficjalnym kursem, lecz zbiorem zagadnień, które są kluczowe do zrozumienia platformy. Struktura może być przydatna również dla innych osób rozpoczynających naukę OpenShift.
 
 ## Struktura Agendy
 
