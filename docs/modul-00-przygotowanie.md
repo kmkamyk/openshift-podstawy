@@ -8,7 +8,7 @@
 
 Red Hat OpenShift Local, znany wcześniej jako CodeReady Containers (CRC), to samowystarczalna aplikacja zaprojektowana do uruchamiania minimalistycznego, wstępnie skonfigurowanego klastra OpenShift na lokalnej stacji roboczej.[1, 2] Jego głównym celem jest zapewnienie deweloperom i testerom środowiska, które emuluje produkcyjne środowisko chmurowe OpenShift, pozwalając na szybkie rozpoczęcie pracy z budowaniem i testowaniem klastrów OpenShift.[1, 2]
 
-Należy na wstępie wyjaśnić kluczową kwestię terminologiczną. Zapytanie odnosi się do `OpenShift Local` oraz `oc-local`. Oficjalna nazwa produktu to **Red Hat OpenShift Local**.[1] Jego poprzednia nazwa, CodeReady Containers (CRC), jest nadal powszechnie spotykana w dokumentacji i na forach.[2, 3, 4] Co najważniejsze, narzędzie wiersza poleceń używane do instalacji i zarządzania tym lokalnym klastrem nazywa się **`crc`**, co jest bezpośrednim dziedzictwem poprzedniej nazwy. Termin `oc-local` nie jest poprawną komendą; jest to prawdopodobnie pomyłka wynikająca z połączenia `oc` (standardowego klienta CLI OpenShift) [5] i `local` (nazwy produktu). W tym module do konfiguracji i zarządzania cyklem życia klastra używane będzie wyłącznie polecenie `crc`. Narzędzie `oc` będzie natomiast używane do interakcji z *wewnętrznym* API już uruchomionego klastra.
+Należy na wstępie wyjaśnić kluczową kwestię terminologiczną. Oficjalna nazwa produktu to **Red Hat OpenShift Local**.[1] Jego poprzednia nazwa, CodeReady Containers (CRC), jest nadal powszechnie spotykana w dokumentacji i na forach.[2, 3, 4] Co najważniejsze, narzędzie wiersza poleceń używane do instalacji i zarządzania tym lokalnym klastrem nazywa się **`crc`**, co jest bezpośrednim dziedzictwem poprzedniej nazwy. W tym module do konfiguracji i zarządzania cyklem życia klastra używane będzie wyłącznie polecenie `crc`. Narzędzie `oc` (standardowy klient CLI OpenShift) [5] będzie natomiast używane do interakcji z *wewnętrznym* API już uruchomionego klastra.
 
 Architektonicznie, OpenShift Local działa jako **klaster jednowęzłowy (single-node cluster)**.[6] Jest to fundamentalna różnica w stosunku do środowisk produkcyjnych, które dla zapewnienia wysokiej dostępności (HA) wymagają wielu węzłów płaszczyzny sterowania (control plane) i wielu węzłów roboczych (worker nodes).[7, 8] OpenShift Local osiąga tę jednowęzłową architekturę poprzez uruchomienie maszyny wirtualnej (VM) na lokalnej stacji roboczej. Wewnątrz tej maszyny wirtualnej, zarówno komponenty płaszczyzny sterowania, jak i funkcje węzła roboczego są uruchomione na tej samej instancji.[1, 9]
 
@@ -105,11 +105,11 @@ Jednakże, standardowa, oficjalna dystrybucja OpenShift Local pobierana z portal
 
 ---
 
-## Lekcja 0.2: Instalacja i konfiguracja OpenShift Local na Twojej lokalnej maszynie
+## Lekcja 0.2: Instalacja i Konfiguracja OpenShift Local na Twojej Lokalnej Maszynie
 
-### 0.2.1. Pobieranie `oc-local` z Red Hat Developer Portal
+### 0.2.1. Pobieranie `crc` z Red Hat Developer Portal
 
-Jak ustalono w Lekcji 0.1, narzędziem wymaganym do instalacji klastra nie jest `oc-local`, lecz plik binarny **`crc`**. Ten plik binarny jest samowystarczalnym programem wykonywalnym, który zarządza całym cyklem życia klastra OpenShift Local.[9] Narzędzie `crc` można pobrać bezpośrednio z portalu Red Hat Developer Portal.
+Jak ustalono w Lekcji 0.1, narzędziem wymaganym do instalacji klastra jest plik binarny **`crc`**. Ten plik binarny jest samowystarczalnym programem wykonywalnym, który zarządza całym cyklem życia klastra OpenShift Local.[9] Narzędzie `crc` można pobrać bezpośrednio z portalu Red Hat Developer Portal.
 
 **Procedura pobierania krok po kroku:**
 
@@ -147,9 +147,9 @@ Rejestry te, takie jak `Quay.io` oraz `registry.redhat.io`, hostują oficjalne, 
 
 Zaleca się skopiowanie klucza do schowka, ponieważ będzie on potrzebny podczas procesu `crc start`.
 
-### 0.2.3. Inicjalizacja środowiska: `oc-local setup`
+### 0.2.3. Inicjalizacja środowiska: `crc setup`
 
-Zanim będzie można uruchomić klaster, należy przygotować maszynę hosta. Służy do tego polecenie `crc setup` (nie `oc-local setup`).
+Zanim będzie można uruchomić klaster, należy przygotować maszynę hosta. Służy do tego polecenie `crc setup`.
 
 **Cel polecenia `crc setup`:**
 Polecenie `crc setup` [23] nie uruchamia klastra. Jego zadaniem jest skonfigurowanie lokalnej maszyny (hosta) tak, aby była gotowa do uruchomienia maszyny wirtualnej OpenShift Local.[23]
@@ -158,7 +158,7 @@ Polecenie `crc setup` [23] nie uruchamia klastra. Jego zadaniem jest skonfigurow
 
   * Weryfikuje, czy system spełnia minimalne wymagania (CPU, RAM, dysk).
   * Tworzy katalog `~/.crc` (lub `C:\Users\<user>\.crc` na Windows), jeśli jeszcze nie istnieje. Będzie on używany do przechowywania plików konfiguracyjacych, pobranego obrazu VM i innych zasobów.[23]
-  * Na **Linux**: Konfiguruje `libvirt` i `NetworkManager` pod kątem sieci wirtualnej klastra. Ten krok będzie wymagał podania hasła `sudo`.[9, 23]
+  * Na **Linux**: Konfiguruje `libvirt` i `NetworkManager` pod kątem sieci wirtualnej klastra. Ten krok może wymagać podania hasła `sudo`.[9, 23]
   * Na **Windows/macOS**: Konfiguruje domyślny hiperwizor systemowy (Hyper-V na Windows Pro, lub HyperKit/Virtualization Framework na macOS). Ten krok może wymagać uprawnień administratora.[23]
   * **Pobiera obraz maszyny wirtualnej**: Jest to najdłuższy etap. `crc` pobierze ważący wiele gigabajtów obraz dysku VM zawierający RHEL CoreOS i wstępnie załadowane obrazy OpenShift. Czas trwania "może być długi, w zależności od szybkości sieci i dysku".[9]
   * Rozpakowuje plik binarny `oc` (OpenShift CLI) i umieszcza go w wewnętrznej pamięci podręcznej (`~/.crc/bin`), skąd zostanie później dodany do ścieżki `PATH`.[23]
@@ -170,7 +170,7 @@ Polecenie `crc setup` [23] nie uruchamia klastra. Jego zadaniem jest skonfigurow
 3.  Zostaniesz poproszony o podanie hasła administratora/`sudo` w celu skonfigurowania sieci lub hiperwizora.[9, 23]
 4.  Poczekaj na zakończenie procesu, który może potrwać kilkanaście minut, w zależności od szybkości pobierania.
 
-### 0.2.4. Uruchomienie klastra: `oc-local start`
+### 0.2.4. Uruchomienie klastra: `crc start`
 
 Po pomyślnym przygotowaniu środowiska przez `crc setup`, można uruchomić klaster za pomocą polecenia `crc start`.
 
