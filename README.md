@@ -1,4 +1,4 @@
-# 🚀 Kompleksowy Konspekt OpenShift
+# 🚀 Ścieżka Nauki: Poziomu Średniozaawansowanego w OpenShift
 
 Witaj! To repozytorium to mój osobisty, ustrukturyzowany **konspekt tematyczny** (zbiór zagadnień) dotyczący platformy OpenShift.
 
